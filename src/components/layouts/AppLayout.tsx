@@ -3,18 +3,16 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useUI } from '@/hooks/useUI';
-import { Header } from '@/components/Header';
-import { Icon } from '@/components/ui/Icon';
+import { useOnboarding } from '@/contexts/OnboardingContext'; // New import
 import { logService } from '@/services/logService';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
-import { useOnboarding } from '@/contexts/OnboardingContext'; // New import
 
-// Lazy load components
+// Lazy load components (only include components that actually exist)
 const AnalysisDashboard = lazy(() => import('@/components/features/analysis/AnalysisDashboard'));
 const HistoryModal = lazy(() => import('@/components/features/history/HistoryModal').then(module => ({ default: module.HistoryModal })));
 const PobInput = lazy(() => import('@/components/features/import/PobInput'));
 const SimulationView = lazy(() => import('@/components/features/simulation/SimulationView'));
-// Removed non-existent components and corrected lazy loading for existing ones
+// Removed non-existent components:
 // const Welcome = lazy(() => import('@/components/features/import/Welcome'));
 // const ThinkingProcess = lazy(() => import('@/components/features/import/ThinkingProcess'));
 // const BuildHud = lazy(() => import('@/components/features/analysis/BuildHud'));
@@ -93,52 +91,61 @@ const AppLayout: React.FC = () => {
 
   return (
     <div className="app-container">
-      <Header />
-      <div className="main-layout">
-        <main className="content-area" role="main" aria-label="Application Content">
-          <Suspense fallback={<div>Loading content...</div>}>
-            {view === 'welcome' && (
-              <div className="max-w-4xl mx-auto">
-                <PobInput />
-              </div>
-            )}
+      <header className="app-header">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-yellow">CRT Futurism Build Analyzer</h1>
+          <button
+            onClick={logService.toggleVisibility}
+            className="px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+            aria-expanded={isDebugConsoleVisible}
+          >
+            Debug Console
+          </button>
+        </div>
+      </header>
 
-            {view === 'loading' && (
-              <div className="max-w-4xl mx-auto mt-12">
-                <SimulationView steps={analysisSteps} currentStep={currentStepIndex} />
-              </div>
-            )}
+      <main className="flex-1 p-6 overflow-auto">
+        <Suspense fallback={<div>Loading...</div>}>
+          {view === 'welcome' && (
+            <div className="max-w-4xl mx-auto">
+              <PobInput />
+            </div>
+          )}
 
-            {view === 'error' && (
-              <div className="max-w-4xl mx-auto">
-                <div className="card mt-6 p-4 flex-col items-center gap-4 text-center" style={{ borderColor: 'var(--color-red)' }}>
-                  <Icon name="alertTriangle" className="text-red" style={{ flexShrink: 0, width: '36px', height: '36px' }} />
-                  <div>
-                    <strong className="text-red text-xl">ANALYSIS HALTED</strong>
-                    <p className="mt-2">{error}</p>
-                  </div>
-                  <button onClick={resetAnalysis} className="button button-secondary mt-4">Start Over</button>
-                </div>
-              </div>
-            )}
+          {view === 'loading' && (
+            <div className="max-w-4xl mx-auto mt-12">
+              {/* Changed from ThinkingProcess to SimulationView and removed steps/currentStep as they are not props for SimulationView */}
+              <SimulationView />
+            </div>
+          )}
 
-            {view === 'dashboard' && analysisResult && (
-              <div className="max-w-5xl mx-auto animate-fade-in flex flex-col gap-6">
-                <SimulationView />
-                <AnalysisDashboard />
-              </div>
-            )}
+          {view === 'dashboard' && analysisResult && (
+            <div className="max-w-5xl mx-auto animate-fade-in flex flex-col gap-6">
+              {/* Removed BuildHud */}
+              <AnalysisDashboard />
+            </div>
+          )}
+
+          {view === 'error' && error && (
+            <div className="error-container text-center">
+              <h2 className="text-2xl font-bold text-red-600 mb-4">An Error Occurred</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
+              <button onClick={resetAnalysis} className="button button-secondary mt-4">Start Over</button>
+            </div>
+          )}
+        </Suspense>
+
+        {/* Removed conditional rendering for non-existent modals and chat interface */}
+        {/* {isHistoryVisible && <HistoryModal />}
+        {isGuidedReviewVisible && <GuidedReviewModal />}
+        {isGuideModalVisible && <GuideModal />}
+        {isPublicLibraryVisible && <PublicLibraryModal />}
+        <aside className="chat-sidebar" role="complementary" aria-label="Chat Interface">
+          <Suspense fallback={<div>Loading chat...</div>}>
+            <ChatInterface />
           </Suspense>
-        </main>
-
-        {view === 'dashboard' && analysisResult && (
-          <aside className="chat-sidebar" role="complementary" aria-label="Chat Interface">
-            <Suspense fallback={<div>Loading chat...</div>}>
-              {/* ChatInterface component was removed, so this will be empty or a placeholder */}
-            </Suspense>
-          </aside>
-        )}
-      </div>
+        </aside> */}
+      </main>
 
       <footer className="text-center p-6 opacity-50 text-sm" role="contentinfo">
         <p>CRT Futurism Build Analyzer. Analysis considers recent patch notes. Character data from pathofexile.com. All analysis is generated by AI and should be used as a guideline.</p>

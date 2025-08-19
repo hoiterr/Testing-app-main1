@@ -2,12 +2,13 @@
 import React from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useHistory } from '@/hooks/useHistory';
-import { useError } from '@/contexts/ErrorContext'; // New import
+import { useError } from '@/contexts/ErrorContext';
+import { TimelessJewelSuggestion, ClusterJewelSuggestion, TreeOptimizationSuggestion } from '@/types'; // Import specific types
 
 const SimulationView: React.FC = () => {
     const { pobInput, pobUrl, leagueContext } = useAnalysis();
     const { handleRunSimulation, state: { simulationResult, isSimulating, simulationError } } = useHistory();
-    const { showError } = useError(); // Use showError
+    const { showError } = useError();
     
     const onRun = () => {
         handleRunSimulation(pobInput, pobUrl, leagueContext);
@@ -22,8 +23,7 @@ const SimulationView: React.FC = () => {
     if (isSimulating) {
         return (
             <div className="flex justify-center items-center h-full">
-                {/* Removed Spinner */}
-                {/* <Spinner /> */}
+                Loading Simulation...
             </div>
         );
     }
@@ -42,8 +42,6 @@ const SimulationView: React.FC = () => {
         );
     }
     
-    const hasResults = simulationResult.timelessJewel || simulationResult.clusterJewels?.length || simulationResult.treeOptimizations?.length;
-
     return (
         <div className="flex-col gap-6">
              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
@@ -58,42 +56,52 @@ const SimulationView: React.FC = () => {
             {simulationResult && (
                 <div className="space-y-6">
                     <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Simulation Results</h3>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Timeless Jewel</h4>
-                        <p className="text-gray-700 dark:text-gray-300">Seed: {simulationResult.timelessJewel.seed}</p>
-                        <p className="text-gray-700 dark:text-gray-300">Type: {simulationResult.timelessJewel.type}</p>
-                        <h5 className="font-medium text-gray-800 dark:text-gray-200">Notable Stats:</h5>
-                        <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                            {simulationResult.timelessJewel.notableStats.map((stat: string, i: number) => (
-                                <li key={i}>{stat}</li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cluster Jewels</h4>
-                        <div className="space-y-2">
-                            {simulationResult.clusterJewels.map((jewel: any, i: number) => (
-                                <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <p className="font-medium text-gray-800 dark:text-gray-200">Name: {jewel.name}</p>
-                                    <p className="text-gray-700 dark:text-gray-300">Type: {jewel.type}</p>
-                                    <p className="text-gray-700 dark:text-gray-300">Passives: {jewel.passives.join(', ')}</p>
-                                </div>
-                            ))}
+                    {simulationResult.timelessJewel && (
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Timeless Jewel</h4>
+                            <p className="text-gray-700 dark:text-gray-300">Location: {simulationResult.timelessJewel.socketLocation}</p>
+                            <p className="text-gray-700 dark:text-gray-300">Name: {simulationResult.timelessJewel.jewelName}</p>
+                            <p className="text-gray-700 dark:text-gray-300">Summary: {simulationResult.timelessJewel.summary}</p>
+                            <h5 className="font-medium text-gray-800 dark:text-gray-200">Notable Stats:</h5>
+                            <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
+                                {simulationResult.timelessJewel.notableStats.map((stat: string, i: number) => (
+                                    <li key={i}>{stat}</li>
+                                ))}
+                            </ul>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tree Optimizations</h4>
-                        <div className="space-y-2">
-                            {simulationResult.treeOptimizations.map((opt: any, i: number) => (
-                                <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <p className="font-medium text-gray-800 dark:text-gray-200">Type: {opt.type}</p>
-                                    <p className="text-gray-700 dark:text-gray-300">Description: {opt.description}</p>
-                                </div>
-                            ))}
+                    {simulationResult.clusterJewels && simulationResult.clusterJewels.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cluster Jewels</h4>
+                            <div className="space-y-2">
+                                {simulationResult.clusterJewels.map((jewel: ClusterJewelSuggestion, i: number) => (
+                                    <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                                        <p className="font-medium text-gray-800 dark:text-gray-200">Type: {jewel.type}</p>
+                                        <p className="text-gray-700 dark:text-gray-300">Base Type: {jewel.baseType}</p>
+                                        <p className="text-gray-700 dark:text-gray-300">Notables: {jewel.notablePassives.join(', ')}</p>
+                                        <p className="text-gray-700 dark:text-gray-300">Summary: {jewel.summary}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {simulationResult.treeOptimizations && simulationResult.treeOptimizations.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tree Optimizations</h4>
+                            <div className="space-y-2">
+                                {simulationResult.treeOptimizations.map((opt: TreeOptimizationSuggestion, i: number) => (
+                                    <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                                        <p className="font-medium text-gray-800 dark:text-gray-200">Title: {opt.title}</p>
+                                        <p className="text-gray-700 dark:text-gray-300">Summary: {opt.summary}</p>
+                                        <p className="text-green-500">Pros: {opt.pros.join(', ')}</p>
+                                        <p className="text-red-500">Cons: {opt.cons.join(', ')}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <button
                         onClick={handleRunSimulation}

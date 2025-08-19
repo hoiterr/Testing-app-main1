@@ -3,9 +3,8 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { useHistory } from '@/hooks/useHistory';
 import { useAnalysis } from '@/hooks/useAnalysis';
-import { ExternalLink } from '@/components/ui/ExternalLink';
 import { format } from 'date-fns';
-import { AnalysisResult, ComparisonResult } from '@/types';
+import { PoeAnalysisResult, ComparisonResult, AnalysisSnapshot, ComparisonSelection } from '@/types';
 import { useUI } from '@/hooks/useUI';
 
 const SelectionSlot: React.FC<{ slot: 'A' | 'B' }> = ({ slot }) => {
@@ -37,7 +36,7 @@ const ProgressionLog: React.FC = () => {
     const { state: { history } } = useHistory();
 
     const progressionData = useMemo(() => {
-        const characters = new Map<string, AnalysisResult[]>();
+        const characters = new Map<string, AnalysisSnapshot[]>();
         // Reverse history to process oldest first
         [...history].reverse().forEach(snapshot => {
             if (!characters.has(snapshot.characterName)) {
@@ -46,7 +45,7 @@ const ProgressionLog: React.FC = () => {
             characters.get(snapshot.characterName)!.push(snapshot);
         });
 
-        const characterLogs: { name: string; logs: AnalysisResult[] }[] = [];
+        const characterLogs: { name: string; logs: AnalysisSnapshot[] }[] = [];
         characters.forEach((logs, name) => {
             if (logs.length > 1) {
                 characterLogs.push({ name, logs });
@@ -172,7 +171,7 @@ export const HistoryModal: React.FC = () => {
 
     const onClose = () => hideHistory();
 
-    const onSelectForCompare = (snapshot: AnalysisResult) => {
+    const onSelectForCompare = (snapshot: AnalysisSnapshot) => {
         setActiveTab('compare');
         if (!comparisonSelection.slotA) {
             handleSelectForComparison('slotA', snapshot);
@@ -200,11 +199,10 @@ export const HistoryModal: React.FC = () => {
             >
                 <header className="modal-header">
                     <div className="flex-row items-center gap-3">
-                        <Icon name="history" className="text-yellow" style={{height: '1.5rem', width: '1.5rem'}} />
                         <h2 id="history-modal-title" className="text-xl">History &amp; Progression</h2>
                     </div>
                     <button onClick={onClose} className="modal-close-btn" aria-label="Close history modal">
-                        <Icon name="x" />
+                        X
                     </button>
                 </header>
                 
@@ -220,7 +218,7 @@ export const HistoryModal: React.FC = () => {
                         <div className="flex-col gap-4 animate-fade-in">
                             <div className="card p-4">
                                 <h3 className="text-lg text-yellow mb-4 flex-row items-center gap-2">
-                                    <Icon name="compare" /> Build Comparison Tool
+                                    Build Comparison Tool
                                 </h3>
                                 <p className="text-sm opacity-70 mb-4">Select two saved snapshots from the 'Saved Snapshots' tab to compare them side-by-side.</p>
                                 <div className="comparison-slots">
@@ -233,7 +231,7 @@ export const HistoryModal: React.FC = () => {
                                         disabled={!isReadyToCompare || isComparing}
                                         onClick={handleRunComparison}
                                     >
-                                        {isComparing ? <Spinner /> : <><Icon name="wand" /> <span>Compare Builds</span></>}
+                                        {isComparing ? 'Comparing...' : 'Compare Builds'}
                                     </button>
                                     {comparisonSelection.slotA && (
                                         <button 
@@ -247,7 +245,7 @@ export const HistoryModal: React.FC = () => {
     
                             {isComparing && (
                                 <div className="text-center text-yellow p-4">
-                                    <Spinner />
+                                    Comparing...
                                     <p className="mt-2">AI is comparing snapshots...</p>
                                 </div>
                             )}
@@ -259,14 +257,29 @@ export const HistoryModal: React.FC = () => {
                                 </div>
                             )}
     
-                            {comparisonResult && <ComparisonResultView result={comparisonResult} />}
+                            {comparisonResult && (
+                                <div className="comparison-result-view">
+                                    <h4 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-100">Comparison Summary</h4>
+                                    <p>{comparisonResult.summary}</p>
+                                    <div className="flex space-x-4 mt-4">
+                                        <div className="flex-1">
+                                            <h5 className="font-bold">Snapshot A: {comparisonResult.snapshotA.buildTitle}</h5>
+                                            <p>{new Date(comparisonResult.snapshotA.timestamp).toLocaleString()}</p>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h5 className="font-bold">Snapshot B: {comparisonResult.snapshotB.buildTitle}</h5>
+                                            <p>{new Date(comparisonResult.snapshotB.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {activeTab === 'progression' && (
                         <div className="animate-fade-in">
                             <h3 className="text-lg text-yellow mb-4 flex-row items-center gap-2">
-                                <Icon name="trendingUp" /> Character Progression Log
+                                Character Progression Log
                             </h3>
                             <ProgressionLog />
                         </div>
@@ -277,13 +290,13 @@ export const HistoryModal: React.FC = () => {
                             <h3 className="text-lg mb-4">Saved Snapshots</h3>
                             {history.length === 0 ? (
                                 <div className="text-center opacity-50 py-10">
-                                    <Icon name="history" className="mx-auto mb-4" style={{height: '3rem', width: '3rem'}} />
+                                    No saved analyses found.
                                     <p className="text-xl">No saved analyses found.</p>
                                     <p className="text-sm mt-2">You can save an analysis from the main dashboard.</p>
                                 </div>
                             ) : (
                                 <ul className="flex-col gap-3" style={{listStyle: 'none'}}>
-                                    {history.map((snapshot: AnalysisResult) => (
+                                    {history.map((snapshot: AnalysisSnapshot) => (
                                         <li key={snapshot.id} className="p-3 flex-row items-center justify-between gap-4 flex-wrap" style={{backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid var(--color-divider)'}}>
                                             <div>
                                                 <p className="font-bold">{snapshot.buildTitle}</p>

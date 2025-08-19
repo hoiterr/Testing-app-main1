@@ -6,14 +6,12 @@ import { HistoryProvider } from '@/contexts/HistoryContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { UIProvider } from '@/contexts/UIContext';
-import { App } from '@/App'; // Corrected import for App
 import { AppProvider } from '@/contexts/AppContext';
 import { AnalysisProvider } from '@/contexts/AnalysisContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import AppLayout from '@/components/layouts/AppLayout';
 import { logService } from '@/services/logService';
 
-const DebugConsole = lazy(() => import('@/components/ui/DebugConsole').then(module => ({ default: module.DebugConsole })));
 
 interface AppProps {}
 
@@ -33,9 +31,10 @@ export const App: React.FC<AppProps> = () => {
                                 <OnboardingProvider>
                                     <ThemeProvider> {/* Wrap with ThemeProvider */}
                                         <AppLayout />
-                                        <Suspense fallback={null}> 
+                                        {/* Removed DebugConsole usage */}
+                                        {/* <Suspense fallback={null}> 
                                             <DebugConsole />
-                                        </Suspense>
+                                        </Suspense> */}
                                     </ThemeProvider>
                                 </OnboardingProvider>
                             </AnalysisProvider>

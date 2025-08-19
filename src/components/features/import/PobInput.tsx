@@ -1,13 +1,13 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
 import { useUI } from '@/hooks/useUI';
-import { Tooltip } from '@/components/ui/Tooltip';
 import { AnalysisGoal, LeagueContext } from '@/types';
 import { logService } from '@/services/logService';
 import { decodePobCode, isPobCode } from '@/services/pobUtils';
+import { useError } from '@/contexts/ErrorContext';
 
 type ImportMethod = 'account' | 'manual';
 
@@ -15,7 +15,7 @@ const PreflightCheckView: React.FC = () => {
     const { preflightResult, view, handleAnalysis, resetAnalysis, preflightError } = useAnalysis();
     const { initializeChat } = useChat();
     const isLoading = view === 'loading';
-    const { showError } = useUI();
+    const { showError } = useError();
 
     useEffect(() => {
         if (preflightError) {
@@ -26,7 +26,7 @@ const PreflightCheckView: React.FC = () => {
     if (preflightError) {
         return (
              <div className="preflight-check-view text-center">
-                <Tooltip content="Pre-Flight Check Failed. Please try again or check your PoB code/URL." />
+                <p className="text-lg text-red">Pre-Flight Check Failed. Please try again or check your PoB code/URL.</p>
                 <h4 className="text-lg text-red">Pre-Flight Check Failed</h4>
                 <p className="opacity-90 mt-2">{preflightError}</p>
                 <button onClick={resetAnalysis} className="button button-secondary mt-4">Try Again</button>
@@ -38,7 +38,7 @@ const PreflightCheckView: React.FC = () => {
         return (
             <div className="preflight-check-view text-center">
                  <div className="flex-col items-center justify-center">
-                    <Tooltip content="Running Pre-Flight Check..." />
+                    <p>Running Pre-Flight Check...</p>
                     <p className="text-yellow mt-4">Running Pre-Flight Check...</p>
                 </div>
             </div>
@@ -47,7 +47,7 @@ const PreflightCheckView: React.FC = () => {
 
     return (
         <div className="preflight-check-view animate-fade-in text-center">
-            <Tooltip content="Build Identified. Confirm and analyze the character." />
+            <p>Build Identified. Confirm and analyze the character.</p>
             <h4 className="text-lg text-green">Build Identified</h4>
             <p className="opacity-70 mt-1">The AI has identified the following character. Does this look correct?</p>
             <ul className="preflight-list">
@@ -62,7 +62,7 @@ const PreflightCheckView: React.FC = () => {
                     Cancel
                 </button>
                 <button onClick={() => handleAnalysis(initializeChat)} disabled={isLoading} className="button button-primary">
-                    <Tooltip content="Confirm and analyze the character." />
+                    <span>Confirm and analyze the character.</span>
                     Confirm & Analyze
                 </button>
             </div>
@@ -76,7 +76,7 @@ const AccountImportView: React.FC = () => {
         handleFetchCharacters, handleSelectCharacter, resetImport, 
         isFetchingPobData, selectedCharacter, handleCharacterAnalysis, error
     } = useAnalysis();
-    const { showError } = useUI();
+    const { showError } = useError();
     
     const isBusy = isFetchingCharacters || isFetchingPobData;
     
@@ -89,7 +89,7 @@ const AccountImportView: React.FC = () => {
     if (isFetchingPobData) {
         return (
             <div className="flex-col items-center justify-center" style={{height: '12rem'}}>
-                <Tooltip content="Fetching build data from PoE account." />
+                <p>Fetching build data from PoE account.</p>
                 <p className="text-yellow mt-4">Fetching build data...</p>
             </div>
         )
@@ -109,7 +109,7 @@ const AccountImportView: React.FC = () => {
                         disabled={isBusy}
                         className="button button-primary w-full"
                     >
-                        {isBusy ? <Tooltip content="Fetching build data..." /> : <span>Fetch Build & Run Pre-Flight</span>}
+                        {isBusy ? 'Fetching build data...' : <span>Fetch Build & Run Pre-Flight</span>}
                     </button>
                 </div>
                 <button
@@ -127,7 +127,7 @@ const AccountImportView: React.FC = () => {
     if (isFetchingCharacters) {
         return (
             <div className="flex-col items-center justify-center" style={{height: '12rem'}}>
-                <Tooltip content="Fetching characters from PoE account." />
+                <p>Fetching characters from PoE account.</p>
                 <p className="text-yellow mt-4">Fetching characters...</p>
             </div>
         )
@@ -206,7 +206,7 @@ const ManualImportView: React.FC = () => {
 
     const [rawInput, setRawInput] = useState(pobInput);
     const [validationStatus, setValidationStatus] = useState<{status: 'idle' | 'validating' | 'valid' | 'invalid', message: string}>({status: 'idle', message: ''});
-    const { showError } = useUI();
+    const { showError } = useError();
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -269,7 +269,7 @@ const ManualImportView: React.FC = () => {
                         Step 1: Path of Building Data
                     </label>
                     <button onClick={handlePaste} disabled={isLoading || showPreflight} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
-                        <Tooltip content="Paste your Path of Building pastebin link or import code here." />
+                        <span>Paste your Path of Building pastebin link or import code here.</span>
                         <span>Paste</span>
                     </button>
                 </div>
@@ -311,7 +311,7 @@ const ManualImportView: React.FC = () => {
                     disabled={!isReadyForPreflight || isLoading || showPreflight}
                     className="button button-primary w-full"
                 >
-                    <Tooltip content="Run the pre-flight check to analyze the character." />
+                    <span>Run the pre-flight check to analyze the character.</span>
                     <span>Run Pre-Flight Check</span>
                 </button>
             </div>
@@ -360,7 +360,7 @@ export const PobInput: React.FC = () => {
         
         <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
-                <Tooltip content="Select the league context for the character." />
+                <span>Select the league context for the character.</span>
                 <label htmlFor="league-context" className="block text-lg text-yellow mb-2">
                     League Context:
                 </label>
@@ -378,7 +378,7 @@ export const PobInput: React.FC = () => {
                 </select>
             </div>
             <div className="flex-grow">
-                <Tooltip content="Select the analysis goal for the character." />
+                <span>Select the analysis goal for the character.</span>
                 <label htmlFor="analysis-goal" className="block text-lg text-yellow mb-2">
                     Analysis Goal:
                 </label>

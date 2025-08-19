@@ -18,7 +18,7 @@ export const ErrorDisplay: React.FC = () => {
     return null;
   }
 
-  const cardClass = `error-card ${type || 'error'}`;
+  // const cardClass = `error-card ${type || 'error'}`; // Removed as it's not used
 
   return (
     <div className="error-display-container">
