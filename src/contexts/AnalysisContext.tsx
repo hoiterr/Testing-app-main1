@@ -1,13 +1,11 @@
 
 
 import React, { createContext, useState, useCallback, useEffect } from 'react';
-import { PoeAnalysisResult, PoeCharacter, AnalysisSnapshot, PreflightCheckResult, AnalysisGoal, AppView, LeagueContext, LootFilter, LevelingPlan, TuningGoal, TuningResult, TuningSuggestion, BossingStrategyGuide, ProgressionAlertData } from '../types';
-import * as apiClient from '../services/apiClient';
-import { logService } from '../services/logService';
-import { decodePobCode } from '../services/pobUtils';
-import { Chat } from '@google/genai';
-import { useChat } from '../hooks/useChat';
-import { useUI } from '../hooks/useUI';
+import { PoeAnalysisResult, PoeCharacter, AnalysisSnapshot, PreflightCheckResult, AnalysisGoal, AppView, LeagueContext, LootFilter, LevelingPlan, TuningGoal, TuningResult, BossingStrategyGuide, ProgressionAlertData } from '@/types';
+import * as apiClient from '@/services/apiClient';
+import { logService } from '@/services/logService';
+import { useChat } from '@/hooks/useChat';
+import { useUI } from '@/hooks/useUI';
 
 interface AnalysisContextType {
   // State
@@ -19,6 +17,7 @@ interface AnalysisContextType {
   analysisResult: PoeAnalysisResult | null;
   error: string | null;
   currentStepIndex: number;
+  isAnalyzing: boolean; // Add isAnalyzing to the context type
   isFetchingCharacters: boolean;
   characters: PoeCharacter[];
   selectedCharacter: PoeCharacter | null;
@@ -317,35 +316,35 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [analysisResult, leagueContext]);
 
   const handleGenerateLevelingPlan = useCallback(async () => {
-      if (!pobInput) return;
-      setIsGeneratingPlan(true);
-      setPlanError(null);
-      setLevelingPlan(null);
-      try {
-          const plan = await apiClient.generateLevelingPlan(pobInput, leagueContext);
-          setLevelingPlan(plan);
-      } catch (err) {
-          logService.error("handleGenerateLevelingPlan failed", { error: err });
-          setPlanError(`Failed to generate leveling plan. ${(err as Error).message}`);
-      } finally {
-          setIsGeneratingPlan(false);
-      }
+    if (!pobInput) return;
+    setIsGeneratingPlan(true);
+    setPlanError(null);
+    setLevelingPlan(null);
+    try {
+        const plan = await apiClient.generateLevelingPlan(pobInput, leagueContext);
+        setLevelingPlan(plan);
+    } catch (err) {
+        logService.error("handleGenerateLevelingPlan failed", { error: err });
+        setPlanError(`Failed to generate leveling plan. ${(err as Error).message}`);
+    } finally {
+        setIsGeneratingPlan(false);
+    }
   }, [pobInput, leagueContext]);
 
   const handleTuneBuild = useCallback(async (goal: TuningGoal) => {
-      if (!analysisResult) return;
-      setIsTuning(true);
-      setTuningError(null);
-      setTuningResult(null);
-      try {
-          const result = await apiClient.tuneBuildForContent(analysisResult, goal, leagueContext);
-          setTuningResult(result);
-      } catch (err) {
-          logService.error("handleTuneBuild failed", { error: err });
-          setTuningError(`Failed to tune build. ${(err as Error).message}`);
-      } finally {
-          setIsTuning(false);
-      }
+    if (!analysisResult) return;
+    setIsTuning(true);
+    setTuningError(null);
+    setTuningResult(null);
+    try {
+        const result = await apiClient.tuneBuildForContent(analysisResult, goal, leagueContext);
+        setTuningResult(result);
+    } catch (err) {
+        logService.error("handleTuneBuild failed", { error: err });
+        setTuningError(`Failed to tune build. ${(err as Error).message}`);
+    } finally {
+        setIsTuning(false);
+    }
   }, [analysisResult, leagueContext]);
   
   const handleGenerateGuide = useCallback(async () => {
@@ -430,6 +429,7 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     analysisResult,
     error,
     currentStepIndex,
+    isAnalyzing: view === 'loading', // Add isAnalyzing to the value object
     isFetchingCharacters,
     characters,
     selectedCharacter,

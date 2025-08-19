@@ -84,7 +84,7 @@ const SimulationView: React.FC = () => {
             {simulationResult.clusterJewels && simulationResult.clusterJewels.length > 0 && (
                 <AnalysisCard title="Cluster Jewels" icon="tree">
                     <div className="flex-col gap-4">
-                        {simulationResult.clusterJewels.map((jewel, i) => (
+                        {simulationResult.clusterJewels.map((jewel: any, i: number) => (
                              <div key={i} className="card p-4" style={{backgroundColor: 'rgba(0,0,0,0.2)'}}>
                                 <h4 className="text-xl text-yellow">{jewel.type} Cluster Jewel</h4>
                                 <p className="text-sm opacity-70 mb-3">Base: {jewel.baseType}</p>

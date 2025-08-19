@@ -1,27 +1,16 @@
 
 
-import { 
-    PoeAnalysisResult, 
-    SimulationResult, 
-    CraftingPlan, 
-    FarmingStrategy, 
-    MetagamePulseResult, 
-    PreflightCheckResult, 
-    AnalysisGoal, 
-    LootFilter, 
-    LeagueContext,
-    PoeCharacter,
-    LevelingPlan,
-    TuningGoal,
-    TuningResult,
-    BossingStrategyGuide,
-    AIScores,
-    PublicBuild,
-    PoeApiBuildData,
-} from '../types';
-import { Chat } from '@google/genai';
-import { createChat } from './geminiService'; // Chat is client-side, so this is fine.
+import { GoogleGenAI } from "@google/genai";
+import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy } from '@/types';
+import { logService } from '@/services/logService';
+import { configService } from '@/services/configService';
 import * as poeApi from './poeApi';
+
+const apiBaseUrl = configService.getApiBaseUrl();
+const apiKey = configService.getApiKey();
+
+let ai: GoogleGenAI | null = null;
+
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
 export const getAccountCharacters = async (accountName: string): Promise<PoeCharacter[]> => {

@@ -5,7 +5,6 @@ import { Icon } from '@/components/ui/Icon';
 import { useHistory } from '@/hooks/useHistory';
 import { useUI } from '@/hooks/useUI';
 import { useAnalysis } from '@/hooks/useAnalysis';
-import { useChat } from '@/hooks/useChat';
 import { AnalysisSnapshot } from '@/types';
 import { Spinner } from '@/components/ui/Spinner';
 import { ComparisonResultView } from './ComparisonResultView';
@@ -118,12 +117,8 @@ const ProgressionLog: React.FC = () => {
 
 export const HistoryModal: React.FC = () => {
     const { 
-        history, 
+        state: { history, comparisonSelection, isComparing, comparisonResult, comparisonError },
         deleteAnalysisFromHistory,
-        comparisonSelection,
-        isComparing,
-        comparisonResult,
-        comparisonError,
         handleSelectForComparison,
         handleRunComparison,
         clearComparison

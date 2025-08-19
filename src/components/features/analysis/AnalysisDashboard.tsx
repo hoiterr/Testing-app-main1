@@ -61,11 +61,11 @@ const GroundingSources: React.FC<{ sources: GroundingMetadata[] }> = ({ sources 
 }
 
 export const AnalysisDashboard: React.FC = () => {
-  const { analysisResult, checkedImprovements, handleToggleImprovement, error, isAnalyzing } = useAnalysis();
-  const { sendProactiveChatMessage } = useChat();
-  const { showGuidedReview } = useUI();
-  const { showError } = useError(); // Use showError
-  const [activeTab, setActiveTab] = useState('improvements');
+    const { analysisResult, checkedImprovements, handleToggleImprovement, error, isAnalyzing } = useAnalysis();
+    const { sendProactiveChatMessage } = useChat();
+    const { showGuidedReview } = useUI();
+    const { showError } = useError(); // Use showError
+    const [activeTab, setActiveTab] = useState('improvements');
 
   useEffect(() => {
     const handler = setTimeout(() => {

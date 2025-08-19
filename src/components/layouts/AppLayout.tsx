@@ -1,6 +1,6 @@
 
 
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useUI } from '@/hooks/useUI';
 import { Header } from '@/components/Header';
@@ -15,7 +15,7 @@ const ThinkingProcess = lazy(() => import('@/components/features/import/Thinking
 const AnalysisDashboard = lazy(() => import('@/components/features/analysis/AnalysisDashboard'));
 const BuildHud = lazy(() => import('@/components/features/analysis/BuildHud'));
 const ChatInterface = lazy(() => import('@/components/features/chat/ChatInterface'));
-const HistoryModal = lazy(() => import('@/components/features/history/HistoryModal'));
+const HistoryModal = lazy(() => import('@/components/features/history/HistoryModal').then(module => ({ default: module.HistoryModal })));
 const GuidedReviewModal = lazy(() => import('@/components/features/review/GuidedReviewModal'));
 const GuideModal = lazy(() => import('@/components/features/review/GuideModal'));
 const PublicLibraryModal = lazy(() => import('@/components/features/library/PublicLibraryModal'));
@@ -71,7 +71,13 @@ const AppLayout: React.FC = () => {
   const { isHistoryVisible, isGuidedReviewVisible, isGuideModalVisible, isPublicLibraryVisible } = useUI();
   const { startWelcomeTour, state: { hasCompletedWelcomeTour } } = useOnboarding(); // Use useOnboarding
 
-  const isDebugConsoleVisible = logService.toggleVisibility();
+  const [isDebugConsoleVisible, setIsDebugConsoleVisible] = useState(logService.isConsoleVisible());
+
+  useEffect(() => {
+    logService.subscribeVisibility(() => {
+      setIsDebugConsoleVisible(logService.isConsoleVisible());
+    });
+  }, []);
 
   useEffect(() => {
     if (!hasCompletedWelcomeTour && view === 'welcome') { // Only start tour if not completed and on welcome view

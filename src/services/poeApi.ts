@@ -6,7 +6,6 @@ import {
 import { logService } from './logService';
 import { decodePobCode } from './pobUtils';
 import { fetchProxied } from "./proxyClient";
-import { GoogleGenAI } from '@google/genai';
 
 
 // This file handles direct interactions with the Path of Exile website

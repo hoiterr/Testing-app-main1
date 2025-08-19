@@ -59,7 +59,7 @@ export const preflightCheckPob = async (pobData: string): Promise<PreflightCheck
                 thinkingConfig: { thinkingBudget: 0 } // Disable thinking for max speed
             }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         const result = safeJsonParse<PreflightCheckResult>(rawText);
         logService.info("preflightCheckPob completed successfully.");
         return result;
@@ -142,7 +142,7 @@ export const analyzePob = async (pobData: string, pobUrl: string, leagueContext:
             }
         });
         
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini API.", { rawText });
         
         const analysis = safeJsonParse<PoeAnalysisResult>(rawText);
@@ -197,7 +197,7 @@ export const findUpgrade = async (pobData: string, slot: string, budget: string,
                 responseMimeType: "application/json"
             }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini for upgrade finder.", { rawText });
         const result = safeJsonParse<{ tradeUrl: string; explanation: string; }>(rawText);
 
@@ -248,7 +248,7 @@ export const generateLootFilter = async (analysis: PoeAnalysisResult, leagueCont
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini for loot filter.", { rawText });
         const result = safeJsonParse<LootFilter>(rawText);
         logService.info("generateLootFilter completed successfully.");
@@ -292,7 +292,7 @@ export const runSimulation = async (pobData: string, pobUrl: string, leagueConte
             }
         });
 
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini API for simulation.", { rawText });
         const simulationResult = safeJsonParse<SimulationResult>(rawText);
         logService.info("runSimulation completed successfully.");
@@ -349,7 +349,7 @@ export const generateCraftingPlan = async (pobData: string, slot: string, league
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response for crafting plan.", { rawText });
         const plan = safeJsonParse<CraftingPlan>(rawText);
         logService.info("Successfully parsed crafting plan JSON.");
@@ -392,7 +392,7 @@ export const generateFarmingStrategy = async (pobData: string, craftingCost: str
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response for farming strategy.", { rawText });
         const strategies = safeJsonParse<FarmingStrategy[]>(rawText);
         logService.info("Successfully parsed farming strategies JSON.");
@@ -428,7 +428,7 @@ export const getMetagamePulse = async (leagueContext: string): Promise<MetagameP
                 tools: [{googleSearch: {}}],
             }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini API for metagame pulse.", { rawText });
         const pulseResult = safeJsonParse<MetagamePulseResult>(rawText);
         logService.info("getMetagamePulse completed successfully.");
@@ -472,7 +472,7 @@ export const compareAnalyses = async (analysisA: PoeAnalysisResult, analysisB: P
             model: "gemini-2.5-flash",
             contents: prompt,
         });
-        const summary = response.text?.().trim() ?? '';
+        const summary = response.text?.trim() ?? '';
         logService.info("compareAnalyses completed successfully.");
         return summary;
     } catch(error) {
@@ -536,7 +536,7 @@ export const generateBuildGuide = async (analysis: PoeAnalysisResult): Promise<s
             model: "gemini-2.5-flash",
             contents: prompt,
         });
-        const guide = response.text?.().trim() ?? '';
+        const guide = response.text?.trim() ?? '';
         logService.info("generateBuildGuide completed successfully.");
         return guide;
     } catch(error) {
@@ -582,7 +582,7 @@ export const generateLevelingPlan = async (pobData: string, leagueContext: strin
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         const plan = safeJsonParse<LevelingPlan>(rawText);
         logService.info("generateLevelingPlan completed successfully.");
         return plan;
@@ -623,7 +623,7 @@ export const tuneBuildForContent = async (analysis: PoeAnalysisResult, goal: Tun
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         const result = safeJsonParse<TuningResult>(rawText);
         logService.info("tuneBuildForContent completed successfully.");
         return result;
@@ -657,7 +657,7 @@ export const generateBossingStrategy = async (analysis: PoeAnalysisResult): Prom
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         const result = safeJsonParse<BossingStrategyGuide[]>(rawText);
         logService.info("generateBossingStrategy completed successfully.");
         return result;
@@ -695,7 +695,7 @@ export const scoreBuildForLibrary = async (analysis: PoeAnalysisResult): Promise
             contents: prompt,
             config: { responseMimeType: "application/json" }
         });
-        const rawText = response.text?.().trim() ?? '';
+        const rawText = response.text?.trim() ?? '';
         const result = safeJsonParse<AIScores>(rawText);
         logService.info("scoreBuildForLibrary completed successfully.");
         return result;
@@ -724,7 +724,7 @@ export const convertPoeJsonToPobXml = async (buildData: PoeApiBuildData): Promis
                 thinkingConfig: { thinkingBudget: 0 } // Max speed
             }
         });
-        const xml = response.text?.().trim() ?? '';
+        const xml = response.text?.trim() ?? '';
         if (!xml.startsWith('<PathOfBuilding>')) {
             throw new Error("AI did not return valid PoB XML.");
         }
