@@ -3,7 +3,7 @@ import { useError } from '@/contexts/ErrorContext';
 // import { Card } from '@/components/ui/Card'; // Removed this import
 
 export const ErrorDisplay: React.FC = () => {
-  const { state: { message, type, isVisible }, clearError } = useError();
+  const { state: { message, isVisible }, clearError } = useError();
 
   useEffect(() => {
     if (isVisible) {

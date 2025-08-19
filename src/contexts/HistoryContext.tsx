@@ -35,7 +35,7 @@ type HistoryAction =
     | { type: 'SET_CRAFTING_STATE'; payload: { slot: string; isCrafting: boolean; craftingPlan?: CraftingPlan | null; craftingError?: string | null } }
     | { type: 'SET_METAGAME_STATE'; payload: { isFetchingMetagame: boolean; metagamePulseResult?: MetagamePulseResult | null; metagameError?: string | null } }
     | { type: 'SET_COMPARISON_SELECTION'; payload: ComparisonSelection }
-    | { type: 'SET_COMPARISON_STATE'; payload: { isComparing: boolean; comparisonResult?: ComparisonResult | null; comparisonError?: string | null } }
+    | { type: 'SET_COMPARISON_STATE'; payload: { isComparing: boolean; comparisonResult: ComparisonResult | null; comparisonError: string | null } }
     | { type: 'SET_PUBLIC_BUILDS'; payload: PublicBuild[] }
     | { type: 'SET_FETCHING_PUBLIC_BUILDS'; payload: boolean }
     | { type: 'SET_PUBLISHING'; payload: boolean };

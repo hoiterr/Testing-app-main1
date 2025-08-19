@@ -104,7 +104,7 @@ const SimulationView: React.FC = () => {
                     )}
 
                     <button
-                        onClick={handleRunSimulation}
+                        onClick={() => handleRunSimulation(pobInput, pobUrl, leagueContext)} // Corrected onClick handler
                         disabled={isSimulating}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
