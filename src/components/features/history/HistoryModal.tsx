@@ -1,16 +1,15 @@
 
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Icon } from '@/components/ui/Icon';
 import { useHistory } from '@/hooks/useHistory';
-import { useUI } from '@/hooks/useUI';
 import { useAnalysis } from '@/hooks/useAnalysis';
-import { AnalysisSnapshot } from '@/types';
-import { Spinner } from '@/components/ui/Spinner';
-import { ComparisonResultView } from './ComparisonResultView';
+import { ExternalLink } from '@/components/ui/ExternalLink';
+import { format } from 'date-fns';
+import { AnalysisResult, ComparisonResult } from '@/types';
+import { useUI } from '@/hooks/useUI';
 
 const SelectionSlot: React.FC<{ slot: 'A' | 'B' }> = ({ slot }) => {
-    const { comparisonSelection, clearComparison } = useHistory();
+    const { state: { comparisonSelection }, clearComparison } = useHistory();
     const snapshot = slot === 'A' ? comparisonSelection.slotA : comparisonSelection.slotB;
 
     if (!snapshot) {
@@ -35,10 +34,10 @@ const SelectionSlot: React.FC<{ slot: 'A' | 'B' }> = ({ slot }) => {
 };
 
 const ProgressionLog: React.FC = () => {
-    const { history } = useHistory();
+    const { state: { history } } = useHistory();
 
     const progressionData = useMemo(() => {
-        const characters = new Map<string, AnalysisSnapshot[]>();
+        const characters = new Map<string, AnalysisResult[]>();
         // Reverse history to process oldest first
         [...history].reverse().forEach(snapshot => {
             if (!characters.has(snapshot.characterName)) {
@@ -47,7 +46,7 @@ const ProgressionLog: React.FC = () => {
             characters.get(snapshot.characterName)!.push(snapshot);
         });
 
-        const characterLogs: { name: string; logs: AnalysisSnapshot[] }[] = [];
+        const characterLogs: { name: string; logs: AnalysisResult[] }[] = [];
         characters.forEach((logs, name) => {
             if (logs.length > 1) {
                 characterLogs.push({ name, logs });
@@ -72,8 +71,7 @@ const ProgressionLog: React.FC = () => {
         const isPositive = change > 0;
         return (
             <span className={`progression-change ${isPositive ? 'text-green' : 'text-red'}`}>
-                <Icon name={isPositive ? 'arrowUp' : 'arrowDown'} style={{width: '1rem', height: '1rem'}}/>
-                {Math.abs(change)}
+                <span>{Math.abs(change)}</span>
             </span>
         )
     }
@@ -116,7 +114,7 @@ const ProgressionLog: React.FC = () => {
 
 
 export const HistoryModal: React.FC = () => {
-    const { 
+    const {
         state: { history, comparisonSelection, isComparing, comparisonResult, comparisonError },
         deleteAnalysisFromHistory,
         handleSelectForComparison,
@@ -174,7 +172,7 @@ export const HistoryModal: React.FC = () => {
 
     const onClose = () => hideHistory();
 
-    const onSelectForCompare = (snapshot: AnalysisSnapshot) => {
+    const onSelectForCompare = (snapshot: AnalysisResult) => {
         setActiveTab('compare');
         if (!comparisonSelection.slotA) {
             handleSelectForComparison('slotA', snapshot);
@@ -285,7 +283,7 @@ export const HistoryModal: React.FC = () => {
                                 </div>
                             ) : (
                                 <ul className="flex-col gap-3" style={{listStyle: 'none'}}>
-                                    {history.map((snapshot: AnalysisSnapshot) => (
+                                    {history.map((snapshot: AnalysisResult) => (
                                         <li key={snapshot.id} className="p-3 flex-row items-center justify-between gap-4 flex-wrap" style={{backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid var(--color-divider)'}}>
                                             <div>
                                                 <p className="font-bold">{snapshot.buildTitle}</p>

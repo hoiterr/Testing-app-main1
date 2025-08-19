@@ -1,16 +1,8 @@
 
 
-import { GoogleGenAI } from "@google/genai";
 import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy, MetagamePulseResult } from '@/types';
-import { logService } from '@/services/logService';
-import { configService } from '@/services/configService';
 import * as poeApi from './poeApi';
 import { createChat } from './geminiService';
-
-const apiBaseUrl = configService.get('API_BASE_URL');
-const apiKey = configService.get('GEMINI_API_KEY');
-
-let ai: GoogleGenAI | null = null;
 
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
@@ -37,7 +29,8 @@ async function callAiApi<T>(action: string, data: any): Promise<T> {
     const result = await response.json();
 
     if (!response.ok) {
-        throw new Error(result.error || `Request failed with status ${response.status}`);
+        const errorBody = await response.text();
+        throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorBody}`);
     }
     
     return result as T;

@@ -17,6 +17,7 @@ interface UIContextType {
     showPublicLibrary: () => void;
     hidePublicLibrary: () => void;
     setReviewStep: (step: number) => void;
+    resetUI: () => void; // New method to reset UI state
 }
 
 export const UIContext = createContext<UIContextType | null>(null);
@@ -47,6 +48,13 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         showPublicLibrary: () => setIsPublicLibraryVisible(true),
         hidePublicLibrary: () => setIsPublicLibraryVisible(false),
         setReviewStep: setCurrentReviewStep,
+        resetUI: () => {
+            setIsHistoryVisible(false);
+            setIsGuidedReviewVisible(false);
+            setIsGuideModalVisible(false);
+            setIsPublicLibraryVisible(false);
+            setCurrentReviewStep(0);
+        },
     };
 
     return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

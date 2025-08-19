@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useError } from '@/contexts/ErrorContext';
-import { Card } from './Card';
+// import { Card } from '@/components/ui/Card'; // Removed this import
 
 export const ErrorDisplay: React.FC = () => {
   const { state: { message, type, isVisible }, clearError } = useError();
@@ -22,12 +22,12 @@ export const ErrorDisplay: React.FC = () => {
 
   return (
     <div className="error-display-container">
-      <Card className={cardClass}>
-        <div className="error-content">
-          <p>{message}</p>
-          <button onClick={clearError} className="clear-error-button">×</button>
-        </div>
-      </Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-red-700">Error</h2>
+        <button onClick={clearError} className="text-red-500 hover:text-red-700">
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,14 +1,15 @@
 
 
 import React, { lazy, Suspense } from 'react';
+import { ErrorProvider } from '@/contexts/ErrorContext';
+import { HistoryProvider } from '@/contexts/HistoryContext';
+import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { UIProvider } from '@/contexts/UIContext';
+import { App } from '@/App'; // Corrected import for App
+import { AppProvider } from '@/contexts/AppContext';
 import { AnalysisProvider } from '@/contexts/AnalysisContext';
 import { ChatProvider } from '@/contexts/ChatContext';
-import { HistoryProvider } from '@/contexts/HistoryContext';
-import { UIProvider } from '@/contexts/UIContext';
-import { AppProvider } from '@/contexts/AppContext';
-import { ErrorProvider } from '@/contexts/ErrorContext';
-import { OnboardingProvider } from '@/contexts/OnboardingContext';
-import { ThemeProvider } from '@/contexts/ThemeContext'; // New import
 import AppLayout from '@/components/layouts/AppLayout';
 import { logService } from '@/services/logService';
 

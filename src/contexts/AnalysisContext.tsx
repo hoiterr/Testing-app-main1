@@ -68,7 +68,7 @@ interface AnalysisContextType {
   handleGenerateBossingStrategy: () => Promise<void>;
   loadSnapshotAndCheckProgression: (snapshot: AnalysisSnapshot, history: AnalysisSnapshot[]) => void;
   clearProgressionAlert: () => void;
-  resetApp: () => void;
+  resetAnalysis: () => void;
 }
 
 export const AnalysisContext = createContext<AnalysisContextType | null>(null);
@@ -477,7 +477,7 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     handleGenerateBossingStrategy,
     loadSnapshotAndCheckProgression,
     clearProgressionAlert,
-    resetApp,
+    resetAnalysis: resetApp,
   };
 
   return <AnalysisContext.Provider value={value}>{children}</AnalysisContext.Provider>;

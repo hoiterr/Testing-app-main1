@@ -215,7 +215,7 @@ export const HistoryProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const clearComparison = useCallback(() => {
         dispatch({ type: 'SET_COMPARISON_SELECTION', payload: { slotA: null, slotB: null } });
-        dispatch({ type: 'SET_COMPARISON_STATE', payload: { comparisonResult: null, comparisonError: null } });
+        dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: null, comparisonError: null } });
     }, []);
 
     const handleRunComparison = useCallback(async () => {

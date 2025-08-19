@@ -1,23 +1,21 @@
 
 
-import React, { useState, useEffect } from 'react';
-import { LeagueContextToggle } from '@/components/features/import/LeagueContextToggle';
-import { Icon } from '@/components/ui/Icon';
-import { Spinner } from '@/components/ui/Spinner';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
+import { useUI } from '@/hooks/useUI';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { AnalysisGoal, LeagueContext } from '@/types';
 import { logService } from '@/services/logService';
 import { decodePobCode, isPobCode } from '@/services/pobUtils';
-import { AnalysisGoalToggle } from '@/components/features/import/AnalysisGoalToggle';
-import { useError } from '@/contexts/ErrorContext';
 
 type ImportMethod = 'account' | 'manual';
 
 const PreflightCheckView: React.FC = () => {
-    const { preflightResult, view, handleAnalysis, resetApp, preflightError } = useAnalysis();
+    const { preflightResult, view, handleAnalysis, resetAnalysis, preflightError } = useAnalysis();
     const { initializeChat } = useChat();
     const isLoading = view === 'loading';
-    const { showError } = useError();
+    const { showError } = useUI();
 
     useEffect(() => {
         if (preflightError) {
@@ -28,10 +26,10 @@ const PreflightCheckView: React.FC = () => {
     if (preflightError) {
         return (
              <div className="preflight-check-view text-center">
-                <Icon name="alertTriangle" className="text-red mx-auto mb-3" style={{width: '2rem', height: '2rem'}} />
+                <Tooltip content="Pre-Flight Check Failed. Please try again or check your PoB code/URL." />
                 <h4 className="text-lg text-red">Pre-Flight Check Failed</h4>
                 <p className="opacity-90 mt-2">{preflightError}</p>
-                <button onClick={resetApp} className="button button-secondary mt-4">Try Again</button>
+                <button onClick={resetAnalysis} className="button button-secondary mt-4">Try Again</button>
             </div>
         )
     }
@@ -40,7 +38,7 @@ const PreflightCheckView: React.FC = () => {
         return (
             <div className="preflight-check-view text-center">
                  <div className="flex-col items-center justify-center">
-                    <Spinner />
+                    <Tooltip content="Running Pre-Flight Check..." />
                     <p className="text-yellow mt-4">Running Pre-Flight Check...</p>
                 </div>
             </div>
@@ -49,7 +47,7 @@ const PreflightCheckView: React.FC = () => {
 
     return (
         <div className="preflight-check-view animate-fade-in text-center">
-            <Icon name="check" className="text-green mx-auto mb-3" style={{width: '2rem', height: '2rem'}} />
+            <Tooltip content="Build Identified. Confirm and analyze the character." />
             <h4 className="text-lg text-green">Build Identified</h4>
             <p className="opacity-70 mt-1">The AI has identified the following character. Does this look correct?</p>
             <ul className="preflight-list">
@@ -60,11 +58,11 @@ const PreflightCheckView: React.FC = () => {
             </ul>
 
             <div className="flex-row gap-4 justify-center mt-6">
-                 <button onClick={resetApp} disabled={isLoading} className="button button-secondary">
+                 <button onClick={resetAnalysis} disabled={isLoading} className="button button-secondary">
                     Cancel
                 </button>
                 <button onClick={() => handleAnalysis(initializeChat)} disabled={isLoading} className="button button-primary">
-                    <Icon name="wand" style={{width: '1.25rem', height: '1.25rem'}}/>
+                    <Tooltip content="Confirm and analyze the character." />
                     Confirm & Analyze
                 </button>
             </div>
@@ -78,7 +76,7 @@ const AccountImportView: React.FC = () => {
         handleFetchCharacters, handleSelectCharacter, resetImport, 
         isFetchingPobData, selectedCharacter, handleCharacterAnalysis, error
     } = useAnalysis();
-    const { showError } = useError();
+    const { showError } = useUI();
     
     const isBusy = isFetchingCharacters || isFetchingPobData;
     
@@ -91,7 +89,7 @@ const AccountImportView: React.FC = () => {
     if (isFetchingPobData) {
         return (
             <div className="flex-col items-center justify-center" style={{height: '12rem'}}>
-                <Spinner />
+                <Tooltip content="Fetching build data from PoE account." />
                 <p className="text-yellow mt-4">Fetching build data...</p>
             </div>
         )
@@ -111,7 +109,7 @@ const AccountImportView: React.FC = () => {
                         disabled={isBusy}
                         className="button button-primary w-full"
                     >
-                        {isBusy ? <Spinner /> : <span>Fetch Build & Run Pre-Flight</span>}
+                        {isBusy ? <Tooltip content="Fetching build data..." /> : <span>Fetch Build & Run Pre-Flight</span>}
                     </button>
                 </div>
                 <button
@@ -129,7 +127,7 @@ const AccountImportView: React.FC = () => {
     if (isFetchingCharacters) {
         return (
             <div className="flex-col items-center justify-center" style={{height: '12rem'}}>
-                <Spinner />
+                <Tooltip content="Fetching characters from PoE account." />
                 <p className="text-yellow mt-4">Fetching characters...</p>
             </div>
         )
@@ -208,7 +206,7 @@ const ManualImportView: React.FC = () => {
 
     const [rawInput, setRawInput] = useState(pobInput);
     const [validationStatus, setValidationStatus] = useState<{status: 'idle' | 'validating' | 'valid' | 'invalid', message: string}>({status: 'idle', message: ''});
-    const { showError } = useError();
+    const { showError } = useUI();
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -271,7 +269,7 @@ const ManualImportView: React.FC = () => {
                         Step 1: Path of Building Data
                     </label>
                     <button onClick={handlePaste} disabled={isLoading || showPreflight} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
-                        <Icon name="clipboard" style={{width: '1rem', height: '1rem'}} />
+                        <Tooltip content="Paste your Path of Building pastebin link or import code here." />
                         <span>Paste</span>
                     </button>
                 </div>
@@ -313,7 +311,7 @@ const ManualImportView: React.FC = () => {
                     disabled={!isReadyForPreflight || isLoading || showPreflight}
                     className="button button-primary w-full"
                 >
-                    <Icon name="wand" style={{width: '1.25rem', height: '1.25rem'}}/>
+                    <Tooltip content="Run the pre-flight check to analyze the character." />
                     <span>Run Pre-Flight Check</span>
                 </button>
             </div>
@@ -362,18 +360,40 @@ export const PobInput: React.FC = () => {
         
         <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
-                <LeagueContextToggle
-                    selectedContext={leagueContext}
-                    onContextChange={setLeagueContext}
+                <Tooltip content="Select the league context for the character." />
+                <label htmlFor="league-context" className="block text-lg text-yellow mb-2">
+                    League Context:
+                </label>
+                <select
+                    id="league-context"
+                    className="input-field"
+                    value={leagueContext}
+                    onChange={(e) => setLeagueContext(e.target.value as LeagueContext)}
                     disabled={isLoading || showPreflight}
-                />
+                >
+                    <option value="Standard">Standard</option>
+                    <option value="Hardcore">Hardcore</option>
+                    <option value="SSF">SSF</option>
+                    <option value="HCSSF">HCSSF</option>
+                </select>
             </div>
             <div className="flex-grow">
-                <AnalysisGoalToggle
-                    selectedGoal={analysisGoal}
-                    onGoalChange={setAnalysisGoal}
+                <Tooltip content="Select the analysis goal for the character." />
+                <label htmlFor="analysis-goal" className="block text-lg text-yellow mb-2">
+                    Analysis Goal:
+                </label>
+                <select
+                    id="analysis-goal"
+                    className="input-field"
+                    value={analysisGoal}
+                    onChange={(e) => setAnalysisGoal(e.target.value as AnalysisGoal)}
                     disabled={isLoading || showPreflight}
-                />
+                >
+                    <option value="Build">Build</option>
+                    <option value="Item">Item</option>
+                    <option value="Passive">Passive</option>
+                    <option value="Skill">Skill</option>
+                </select>
             </div>
         </div>
     </div>
