@@ -210,7 +210,7 @@ export const HistoryProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const handleSelectForComparison = useCallback((slot: 'slotA' | 'slotB', snapshot: AnalysisSnapshot) => {
         dispatch({ type: 'SET_COMPARISON_SELECTION', payload: { ...state.comparisonSelection, [slot]: snapshot } });
-        dispatch({ type: 'SET_COMPARISON_STATE', payload: { comparisonResult: null, comparisonError: null } });
+        dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: null, comparisonError: null } });
     }, [state.comparisonSelection]);
 
     const clearComparison = useCallback(() => {
@@ -221,17 +221,17 @@ export const HistoryProvider: React.FC<{ children: ReactNode }> = ({ children })
     const handleRunComparison = useCallback(async () => {
         if (!state.comparisonSelection.slotA || !state.comparisonSelection.slotB) {
             showError("Please select two analyses to compare.", 'warning');
-            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonError: "Please select two analyses to compare." } });
+            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: null, comparisonError: "Please select two analyses to compare." } });
             return;
         }
         dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: true, comparisonResult: null, comparisonError: null } });
         try {
             const summary = await apiClient.compareAnalyses(state.comparisonSelection.slotA.result, state.comparisonSelection.slotB.result);
-            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: { summary, snapshotA: state.comparisonSelection.slotA, snapshotB: state.comparisonSelection.slotB } } });
+            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: { summary, snapshotA: state.comparisonSelection.slotA, snapshotB: state.comparisonSelection.slotB }, comparisonError: null } });
         } catch (err) {
             logService.error("handleRunComparison failed.", { error: err });
             showError(`Comparison failed. ${(err as Error).message}`, 'error');
-            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonError: `Comparison failed. ${(err as Error).message}` } });
+            dispatch({ type: 'SET_COMPARISON_STATE', payload: { isComparing: false, comparisonResult: null, comparisonError: `Comparison failed. ${(err as Error).message}` } });
         }
     }, [state.comparisonSelection, showError]);
     

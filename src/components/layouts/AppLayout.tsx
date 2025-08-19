@@ -3,13 +3,13 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useUI } from '@/hooks/useUI';
-import { useOnboarding } from '@/contexts/OnboardingContext'; // New import
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { logService } from '@/services/logService';
 // import { ErrorDisplay } from '@/components/ui/ErrorDisplay'; // Removed as it's not used directly here
 
 // Lazy load components (only include components that actually exist)
 const AnalysisDashboard = lazy(() => import('@/components/features/analysis/AnalysisDashboard'));
-const HistoryModal = lazy(() => import('@/components/features/history/HistoryModal').then(module => ({ default: module.HistoryModal })));
+// Removed unused HistoryModal lazy import
 const PobInput = lazy(() => import('@/components/features/import/PobInput').then(module => ({ default: module.default }))); // Corrected lazy loading for default export
 // Removed SimulationView import as it's not needed directly here, will be a text placeholder.
 
@@ -27,9 +27,9 @@ const AppLayout: React.FC = () => {
     });
   }, []);
 
-  const { view, error, resetAnalysis } = useAnalysis(); // Removed currentStepIndex, analysisResult
-  const { isHistoryVisible, isGuidedReviewVisible, isGuideModalVisible, isPublicLibraryVisible } = useUI(); // Keep for potential future use
-  const { /* startWelcomeTour, state: { hasCompletedWelcomeTour } */ } = useOnboarding(); // Removed unused variables
+  const { view, error, resetAnalysis } = useAnalysis();
+  const { /* isHistoryVisible, isGuidedReviewVisible, isGuideModalVisible, isPublicLibraryVisible */ } = useUI();
+  const { /* startWelcomeTour, state: { hasCompletedWelcomeTour } */ } = useOnboarding();
 
   return (
     <div className="app-container">
