@@ -1,13 +1,14 @@
 
 
 import { GoogleGenAI } from "@google/genai";
-import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy } from '@/types';
+import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy, MetagamePulseResult } from '@/types';
 import { logService } from '@/services/logService';
 import { configService } from '@/services/configService';
 import * as poeApi from './poeApi';
+import { createChat } from './geminiService';
 
-const apiBaseUrl = configService.getApiBaseUrl();
-const apiKey = configService.getApiKey();
+const apiBaseUrl = configService.get('API_BASE_URL');
+const apiKey = configService.get('GEMINI_API_KEY');
 
 let ai: GoogleGenAI | null = null;
 
