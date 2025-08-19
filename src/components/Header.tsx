@@ -1,6 +1,6 @@
 import React from 'react';
-import { Icon } from './ui/Icon';
-import { useUI } from '../hooks/useUI';
+import { Icon } from '@/components/ui/Icon';
+import { useUI } from '@/hooks/useUI';
 
 export const Header: React.FC = () => {
   const { showHistory, showPublicLibrary } = useUI();

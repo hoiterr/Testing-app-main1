@@ -1,9 +1,9 @@
 
 import React, { createContext, useState, useCallback } from 'react';
-import { ChatMessage, PoeAnalysisResult } from '../types';
+import { ChatMessage, PoeAnalysisResult } from '@/types';
 import { Chat } from '@google/genai';
-import { createChat } from '../services/geminiService';
-import { logService } from '../services/logService';
+import { createChat } from '@/services/geminiService';
+import { logService } from '@/services/logService';
 
 type ProactiveTopic = 'welcome' | 'gear' | 'tree' | 'gems' | 'flasks' | 'synergy' | 'defenses' | 'leveling' | 'lootFilter' | 'crafting' | 'simulations' | 'metagame' | 'improvements';
 

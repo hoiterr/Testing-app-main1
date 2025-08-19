@@ -1,15 +1,15 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { LeagueContextToggle } from './LeagueContextToggle';
-import { Icon } from '../../ui/Icon';
-import { Spinner } from '../../ui/Spinner';
-import { useAnalysis } from '../../../hooks/useAnalysis';
-import { useChat } from '../../../hooks/useChat';
-import { logService } from '../../../services/logService';
-import { decodePobCode, isPobCode } from '../../../services/pobUtils';
-import { AnalysisGoalToggle } from './AnalysisGoalToggle';
-import { useError } from '../../../contexts/ErrorContext';
+import { LeagueContextToggle } from '@/components/features/import/LeagueContextToggle';
+import { Icon } from '@/components/ui/Icon';
+import { Spinner } from '@/components/ui/Spinner';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useChat } from '@/hooks/useChat';
+import { logService } from '@/services/logService';
+import { decodePobCode, isPobCode } from '@/services/pobUtils';
+import { AnalysisGoalToggle } from '@/components/features/import/AnalysisGoalToggle';
+import { useError } from '@/contexts/ErrorContext';
 
 type ImportMethod = 'account' | 'manual';
 

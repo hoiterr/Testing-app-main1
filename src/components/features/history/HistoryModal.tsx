@@ -1,13 +1,13 @@
 
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Icon } from '../../ui/Icon';
-import { useHistory } from '../../../hooks/useHistory';
-import { useUI } from '../../../hooks/useUI';
-import { useAnalysis } from '../../../hooks/useAnalysis';
-import { useChat } from '../../../hooks/useChat';
-import { AnalysisSnapshot } from '../../../types';
-import { Spinner } from '../../ui/Spinner';
+import { Icon } from '@/components/ui/Icon';
+import { useHistory } from '@/hooks/useHistory';
+import { useUI } from '@/hooks/useUI';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useChat } from '@/hooks/useChat';
+import { AnalysisSnapshot } from '@/types';
+import { Spinner } from '@/components/ui/Spinner';
 import { ComparisonResultView } from './ComparisonResultView';
 
 const SelectionSlot: React.FC<{ slot: 'A' | 'B' }> = ({ slot }) => {
@@ -290,7 +290,7 @@ export const HistoryModal: React.FC = () => {
                                 </div>
                             ) : (
                                 <ul className="flex-col gap-3" style={{listStyle: 'none'}}>
-                                    {history.map(snapshot => (
+                                    {history.map((snapshot: AnalysisSnapshot) => (
                                         <li key={snapshot.id} className="p-3 flex-row items-center justify-between gap-4 flex-wrap" style={{backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid var(--color-divider)'}}>
                                             <div>
                                                 <p className="font-bold">{snapshot.buildTitle}</p>

@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, ReactNode } from 'react';
-import { useAnalysis } from '../hooks/useAnalysis';
-import { useChat } from '../hooks/useChat';
-import { useUI } from '../hooks/useUI';
-import { useHistory } from '../hooks/useHistory';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useChat } from '@/hooks/useChat';
+import { useUI } from '@/hooks/useUI';
+import { useHistory } from '@/hooks/useHistory';
 
 interface AppContextType {
   resetAllAppStates: () => void;

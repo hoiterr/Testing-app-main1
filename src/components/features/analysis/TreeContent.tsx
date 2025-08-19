@@ -1,9 +1,9 @@
 
 
 import React, { useState } from 'react';
-import { useAnalysis } from '../../../hooks/useAnalysis';
-import { Icon } from '../../ui/Icon';
-import { ExpandableSuggestion, ImpactProjection, MetaValidation } from '../info/InfoBoxes';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { Icon } from '@/components/ui/Icon';
+import { ExpandableSuggestion, ImpactProjection, MetaValidation } from '@/components/features/info/InfoBoxes';
 
 export const TreeContent: React.FC = () => {
     const { analysisResult } = useAnalysis();

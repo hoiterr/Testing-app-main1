@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useError } from '../../contexts/ErrorContext';
+import { useError } from '@/contexts/ErrorContext';
 import { Card } from './Card';
 
 export const ErrorDisplay: React.FC = () => {

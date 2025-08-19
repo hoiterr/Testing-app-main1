@@ -1,24 +1,24 @@
 
 
 import React, { lazy, Suspense, useEffect } from 'react';
-import { useAnalysis } from '../../hooks/useAnalysis';
-import { useUI } from '../../hooks/useUI';
-import { Header } from '../Header';
-import { Icon } from '../ui/Icon';
-import { logService } from '../../services/logService';
-import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { useOnboarding } from '../../contexts/OnboardingContext'; // New import
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useUI } from '@/hooks/useUI';
+import { Header } from '@/components/Header';
+import { Icon } from '@/components/ui/Icon';
+import { logService } from '@/services/logService';
+import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
+import { useOnboarding } from '@/contexts/OnboardingContext'; // New import
 
 // Lazy load components
-const Welcome = lazy(() => import('../features/import/Welcome'));
-const ThinkingProcess = lazy(() => import('../features/import/ThinkingProcess'));
-const AnalysisDashboard = lazy(() => import('../features/analysis/AnalysisDashboard'));
-const BuildHud = lazy(() => import('../features/analysis/BuildHud'));
-const ChatInterface = lazy(() => import('../features/chat/ChatInterface'));
-const HistoryModal = lazy(() => import('../features/history/HistoryModal'));
-const GuidedReviewModal = lazy(() => import('../features/review/GuidedReviewModal'));
-const GuideModal = lazy(() => import('../features/review/GuideModal'));
-const PublicLibraryModal = lazy(() => import('../features/library/PublicLibraryModal'));
+const Welcome = lazy(() => import('@/components/features/import/Welcome'));
+const ThinkingProcess = lazy(() => import('@/components/features/import/ThinkingProcess'));
+const AnalysisDashboard = lazy(() => import('@/components/features/analysis/AnalysisDashboard'));
+const BuildHud = lazy(() => import('@/components/features/analysis/BuildHud'));
+const ChatInterface = lazy(() => import('@/components/features/chat/ChatInterface'));
+const HistoryModal = lazy(() => import('@/components/features/history/HistoryModal'));
+const GuidedReviewModal = lazy(() => import('@/components/features/review/GuidedReviewModal'));
+const GuideModal = lazy(() => import('@/components/features/review/GuideModal'));
+const PublicLibraryModal = lazy(() => import('@/components/features/library/PublicLibraryModal'));
 
 // Temporary: Welcome Tour Modal (will be extracted to its own component)
 const WelcomeTourModal: React.FC = () => {
@@ -71,7 +71,7 @@ const AppLayout: React.FC = () => {
   const { isHistoryVisible, isGuidedReviewVisible, isGuideModalVisible, isPublicLibraryVisible } = useUI();
   const { startWelcomeTour, state: { hasCompletedWelcomeTour } } = useOnboarding(); // Use useOnboarding
 
-  const isDebugConsoleVisible = logService.getVisibility();
+  const isDebugConsoleVisible = logService.toggleVisibility();
 
   useEffect(() => {
     if (!hasCompletedWelcomeTour && view === 'welcome') { // Only start tour if not completed and on welcome view

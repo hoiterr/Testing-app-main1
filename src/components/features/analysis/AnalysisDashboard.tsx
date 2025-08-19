@@ -1,25 +1,25 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Priority, ROI, DetailedSuggestion, GroundingMetadata } from '../../../types';
-import { AnalysisCard } from '../../ui/AnalysisCard';
-import { Icon, IconName } from '../../ui/Icon';
-import { useAnalysis } from '../../../hooks/useAnalysis';
-import { useChat } from '../../../hooks/useChat';
-import { useUI } from '../../../hooks/useUI';
-import { ConfidenceBadge, ExpandableSuggestion } from '../info/InfoBoxes';
-import { Spinner } from '../../ui/Spinner';
-import { useError } from '../../../contexts/ErrorContext'; // New import
+import { Priority, ROI, DetailedSuggestion, GroundingMetadata } from '@/types';
+import { AnalysisCard } from '@/components/ui/AnalysisCard';
+import { Icon, IconName } from '@/components/ui/Icon';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useChat } from '@/hooks/useChat';
+import { useUI } from '@/hooks/useUI';
+import { ConfidenceBadge, ExpandableSuggestion } from '@/components/features/info/InfoBoxes';
+import { Spinner } from '@/components/ui/Spinner';
+import { useError } from '@/contexts/ErrorContext'; // New import
 
-import SimulationView from '../simulation/SimulationView';
-import CraftingBench from '../crafting/CraftingBench';
-import MetagamePulseView from '../metagame/MetagamePulseView';
-import TreeContent from './TreeContent';
-import GearContent from './GearContent';
-import DefensiveLayersChart from './DefensiveLayersChart';
-import LootFilterContent from '../loot_filter/LootFilterContent';
-import LevelingPlanView from '../leveling/LevelingPlanView';
-import BossingStrategyView from '../bossing/BossingStrategyView';
+import SimulationView from '@/components/features/simulation/SimulationView';
+import CraftingBench from '@/components/features/crafting/CraftingBench';
+import MetagamePulseView from '@/components/features/metagame/MetagamePulseView';
+import TreeContent from '@/components/features/analysis/TreeContent';
+import GearContent from '@/components/features/analysis/GearContent';
+import DefensiveLayersChart from '@/components/features/analysis/DefensiveLayersChart';
+import LootFilterContent from '@/components/features/loot_filter/LootFilterContent';
+import LevelingPlanView from '@/components/features/leveling/LevelingPlanView';
+import BossingStrategyView from '@/components/features/bossing/BossingStrategyView';
 
 const PriorityBadge: React.FC<{ priority: Priority }> = ({ priority }) => {
     const classMap = {
@@ -61,7 +61,7 @@ const GroundingSources: React.FC<{ sources: GroundingMetadata[] }> = ({ sources 
 }
 
 export const AnalysisDashboard: React.FC = () => {
-  const { analysisResult, checkedImprovements, handleToggleImprovement, state: { error, isAnalyzing } } = useAnalysis();
+  const { analysisResult, checkedImprovements, handleToggleImprovement, error, isAnalyzing } = useAnalysis();
   const { sendProactiveChatMessage } = useChat();
   const { showGuidedReview } = useUI();
   const { showError } = useError(); // Use showError

@@ -1,13 +1,13 @@
 
 
 import React, { useState } from 'react';
-import { useAnalysis } from '../../../hooks/useAnalysis';
-import { UserMod } from '../../../types';
-import { GearItemCard } from '../../ui/GearItemCard';
-import { Icon } from '../../ui/Icon';
-import { ExpandableSuggestion } from '../info/InfoBoxes';
-import { ImpactProjection, MetaValidation } from '../info/InfoBoxes';
-import { Spinner } from '../../ui/Spinner';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { UserMod } from '@/types';
+import { GearItemCard } from '@/components/ui/GearItemCard';
+import { Icon } from '@/components/ui/Icon';
+import { ExpandableSuggestion } from '@/components/features/info/InfoBoxes';
+import { ImpactProjection, MetaValidation } from '@/components/features/info/InfoBoxes';
+import { Spinner } from '@/components/ui/Spinner';
 
 const UpgradeFinder: React.FC<{ slot: string }> = ({ slot }) => {
     const { upgrades, handleFindUpgrade } = useAnalysis();

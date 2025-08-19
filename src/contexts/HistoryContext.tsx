@@ -1,9 +1,9 @@
 
 import React, { createContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
-import { AnalysisSnapshot, PoeAnalysisResult, ComparisonSelection, ComparisonResult, CraftingPlan, SimulationResult, MetagamePulseResult, PublicBuild, PreflightCheckResult, LeagueContext } from '../types';
-import { logService } from '../services/logService';
-import * as apiClient from '../services/apiClient';
-import { useError } from './ErrorContext'; // New import
+import { AnalysisSnapshot, PoeAnalysisResult, ComparisonSelection, ComparisonResult, CraftingPlan, SimulationResult, MetagamePulseResult, PublicBuild, PreflightCheckResult, LeagueContext } from '@/types';
+import { logService } from '@/services/logService';
+import * as apiClient from '@/services/apiClient';
+import { useError } from '@/contexts/ErrorContext'; // New import
 
 // 1. Define the state interface
 interface HistoryState {
