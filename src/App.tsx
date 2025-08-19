@@ -1,6 +1,6 @@
 
 
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { ErrorProvider } from '@/contexts/ErrorContext';
 import { HistoryProvider } from '@/contexts/HistoryContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';

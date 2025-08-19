@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { useHistory } from '@/hooks/useHistory';
 import { useAnalysis } from '@/hooks/useAnalysis';
-import { format } from 'date-fns';
-import { PoeAnalysisResult, ComparisonResult, AnalysisSnapshot, ComparisonSelection } from '@/types';
+import { type PoeAnalysisResult, type ComparisonResult, type AnalysisSnapshot, type ComparisonSelection } from '@/types'; // Used 'type' import
 import { useUI } from '@/hooks/useUI';
 
 const SelectionSlot: React.FC<{ slot: 'A' | 'B' }> = ({ slot }) => {

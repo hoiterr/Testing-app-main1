@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
-import { useUI } from '@/hooks/useUI';
 import { AnalysisGoal, LeagueContext } from '@/types';
 import { logService } from '@/services/logService';
 import { decodePobCode, isPobCode } from '@/services/pobUtils';
@@ -36,11 +35,9 @@ const PreflightCheckView: React.FC = () => {
 
     if (!preflightResult) {
         return (
-            <div className="preflight-check-view text-center">
-                 <div className="flex-col items-center justify-center">
-                    <p>Running Pre-Flight Check...</p>
-                    <p className="text-yellow mt-4">Running Pre-Flight Check...</p>
-                </div>
+            <div className="flex-col items-center justify-center" style={{height: '12rem'}}>
+                <p>Running Pre-Flight Check...</p>
+                <p className="text-yellow mt-4">Running Pre-Flight Check...</p>
             </div>
         );
     }
@@ -216,7 +213,7 @@ const ManualImportView: React.FC = () => {
                 if (pobInput) setPobInput('');
                 return;
             }
-            setValidationStatus({ status: 'validating', message: '' }); // Message will be shown via showError
+            setValidationStatus({ status: 'validating', message: '' });
             if (isPobCode(input)) {
                 try {
                     const xml = decodePobCode(input);
@@ -320,82 +317,4 @@ const ManualImportView: React.FC = () => {
 };
 
 
-export const PobInput: React.FC = () => {
-  const [importMethod, setImportMethod] = useState<ImportMethod>('account');
-  const { view, leagueContext, setLeagueContext, analysisGoal, setAnalysisGoal, isPreflighting, preflightResult, preflightError } = useAnalysis();
-  const isLoading = view === 'loading';
-  const showPreflight = !!(isPreflighting || preflightResult || preflightError);
-
-  const tabs: {id: ImportMethod, label: string}[] = [
-    {id: 'account', label: 'Import from Account'},
-    {id: 'manual', label: 'Import Manually'}
-  ];
-  
-  return (
-    <div className="card p-6 flex-col gap-6">
-        <div className="tabs" role="tablist" aria-label="Import Method">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    id={`tab-${tab.id}`}
-                    role="tab"
-                    aria-selected={importMethod === tab.id}
-                    aria-controls="import-panel"
-                    onClick={() => setImportMethod(tab.id)}
-                    className={`tab-button ${importMethod === tab.id ? 'active' : ''}`}
-                    disabled={showPreflight}
-                >
-                    {tab.label}
-                </button>
-            ))}
-        </div>
-
-        <div id="import-panel" role="tabpanel" aria-labelledby={`tab-${importMethod}`} className="pt-4">
-            {showPreflight ? (
-                <PreflightCheckView />
-            ) : (
-                importMethod === 'account' ? <AccountImportView /> : <ManualImportView />
-            )}
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-grow">
-                <span>Select the league context for the character.</span>
-                <label htmlFor="league-context" className="block text-lg text-yellow mb-2">
-                    League Context:
-                </label>
-                <select
-                    id="league-context"
-                    className="input-field"
-                    value={leagueContext}
-                    onChange={(e) => setLeagueContext(e.target.value as LeagueContext)}
-                    disabled={isLoading || showPreflight}
-                >
-                    <option value="Standard">Standard</option>
-                    <option value="Hardcore">Hardcore</option>
-                    <option value="SSF">SSF</option>
-                    <option value="HCSSF">HCSSF</option>
-                </select>
-            </div>
-            <div className="flex-grow">
-                <span>Select the analysis goal for the character.</span>
-                <label htmlFor="analysis-goal" className="block text-lg text-yellow mb-2">
-                    Analysis Goal:
-                </label>
-                <select
-                    id="analysis-goal"
-                    className="input-field"
-                    value={analysisGoal}
-                    onChange={(e) => setAnalysisGoal(e.target.value as AnalysisGoal)}
-                    disabled={isLoading || showPreflight}
-                >
-                    <option value="Build">Build</option>
-                    <option value="Item">Item</option>
-                    <option value="Passive">Passive</option>
-                    <option value="Skill">Skill</option>
-                </select>
-            </div>
-        </div>
-    </div>
-  );
-};
+export default PobInput;

@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { PoeAnalysisResult, SynergyInsight } from '@/types';
+import { type PoeAnalysisResult, type SynergyInsight } from '@/types'; // Used 'type' import
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
 import { useUI } from '@/hooks/useUI';

@@ -3,7 +3,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useUI } from '@/hooks/useUI';
 
 export const Header: React.FC = () => {
-  const { isHistoryVisible, showHistory, hideHistory, isPublicLibraryVisible, showPublicLibrary, hidePublicLibrary } = useUI();
+  const { showHistory, showPublicLibrary } = useUI();
   const { resetAllAppStates } = useAppContext();
 
   return (
@@ -17,7 +17,6 @@ export const Header: React.FC = () => {
         <nav className="flex-row items-center gap-4">
           <button
             onClick={() => {
-              hideHistory();
               showPublicLibrary();
             }}
             className="flex-row items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium"
@@ -27,7 +26,6 @@ export const Header: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              hidePublicLibrary();
               showHistory();
             }}
             className="flex-row items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium"
