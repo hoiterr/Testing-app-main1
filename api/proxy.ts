@@ -1,0 +1,43 @@
+// Vercel Serverless Function: /api/proxy.ts
+// This is our backend. It runs on Vercel's servers.
+import { logService } from '../src/services/logService';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Buffer } from 'buffer';
+
+export default async function handler(request: VercelRequest, response: VercelResponse) {
+    const { targetUrl } = request.query;
+
+    if (!targetUrl || typeof targetUrl !== 'string') {
+        return response.status(400).json({ error: 'targetUrl query parameter is required' });
+    }
+
+    try {
+        const fetchResponse = await fetch(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+                'Accept': 'application/json, text/plain, */*'
+            },
+        });
+
+        // Forward headers and status from the target response
+        fetchResponse.headers.forEach((value, key) => {
+            // Vercel handles content-encoding automatically
+            if (key.toLowerCase() !== 'content-encoding') {
+                response.setHeader(key, value);
+            }
+        });
+        
+        // Set CORS headers
+        response.setHeader('Access-Control-Allow-Origin', '*');
+        response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+
+        // Pipe the body through
+        response.status(fetchResponse.status);
+        const body = await fetchResponse.arrayBuffer();
+        response.send(Buffer.from(body));
+
+    } catch (error: any) {
+        logService.error(`[Vercel Proxy] Failed to fetch target URL: ${targetUrl}`, { error });
+        response.status(500).json({ error: `Server-side proxy failed: ${error.message}` });
+    }
+}
