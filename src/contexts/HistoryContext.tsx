@@ -85,7 +85,7 @@ const historyReducer = (state: HistoryState, action: HistoryAction): HistoryStat
         case 'SET_COMPARISON_SELECTION':
             return { ...state, comparisonSelection: action.payload };
         case 'SET_COMPARISON_STATE':
-            return { ...state, ...action.payload };
+            return { ...state, isComparing: action.payload.isComparing, comparisonResult: action.payload.comparisonResult, comparisonError: action.payload.comparisonError };
         case 'SET_PUBLIC_BUILDS':
             return { ...state, publicBuilds: action.payload };
         case 'SET_FETCHING_PUBLIC_BUILDS':
