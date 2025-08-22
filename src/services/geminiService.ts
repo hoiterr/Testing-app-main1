@@ -301,7 +301,7 @@ export const runSimulation = async (pobData: string, pobUrl: string, leagueConte
                 responseMimeType: "application/json",
             }
         });
-
+        
         const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini API for simulation.", { rawText });
         const simulationResult = safeJsonParse<SimulationResult>(rawText);

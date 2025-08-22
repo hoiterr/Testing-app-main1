@@ -19,12 +19,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
             },
         });
 
-        // Forward headers and status from the target response
+        // Forward headers and status from the target response (including content-encoding!)
         fetchResponse.headers.forEach((value, key) => {
-            // Vercel handles content-encoding automatically
-            if (key.toLowerCase() !== 'content-encoding') {
-                response.setHeader(key, value);
-            }
+            response.setHeader(key, value);
         });
         
         // Set CORS headers
@@ -33,6 +30,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
         // Pipe the body through
         response.status(fetchResponse.status);
+        // Stream raw body through (browser will handle decompression when header is present)
         const body = await fetchResponse.arrayBuffer();
         response.send(Buffer.from(body));
 
