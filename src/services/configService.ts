@@ -1,34 +1,39 @@
 interface AppConfig {
   GEMINI_API_KEY: string;
   API_BASE_URL: string;
-  // Add other environment variables here as needed
 }
 
-const config: AppConfig = {
-  GEMINI_API_KEY: process.env.API_KEY || '',
-  API_BASE_URL: process.env.VITE_API_BASE_URL || 'http://localhost:3000', // Default for local development
+const isBrowser = typeof window !== 'undefined';
+
+const readEnv = (key: string): string => {
+  try {
+    if (isBrowser) {
+      // Vite injects client envs on build under import.meta.env
+      return ((import.meta as any).env?.[key]) ?? '';
+    }
+    return process.env[key] ?? '';
+  } catch {
+    return '';
+  }
 };
 
-// Basic validation to ensure critical environment variables are set
-if (!config.GEMINI_API_KEY) {
-  console.error("Environment variable GEMINI_API_KEY (or process.env.API_KEY) is not set.");
-  // In a real application, you might throw an error or handle this more gracefully.
-  // For Vercel, this is usually managed via Vercel Project Settings -> Environment Variables.
-}
+const config: AppConfig = {
+  // Server: GEMINI_API_KEY or API_KEY; Client: VITE_GEMINI_API_KEY
+  GEMINI_API_KEY: isBrowser
+    ? readEnv('VITE_GEMINI_API_KEY')
+    : (process.env.GEMINI_API_KEY || process.env.API_KEY || ''),
+  // Optional base URL if needed in future; prefer VITE_ on client
+  API_BASE_URL: isBrowser
+    ? readEnv('VITE_API_BASE_URL') || 'http://localhost:3000'
+    : (process.env.API_BASE_URL || process.env.VITE_API_BASE_URL || 'http://localhost:3000'),
+};
 
-// Add validation for API_BASE_URL if it's crucial for the app to function
-if (!config.API_BASE_URL) {
-  console.warn("Environment variable API_BASE_URL (or VITE_API_BASE_URL) is not set. Defaulting to localhost.");
+if (!config.GEMINI_API_KEY) {
+  console.warn("GEMINI_API_KEY is not configured for this runtime. Server uses process.env.GEMINI_API_KEY; client uses VITE_GEMINI_API_KEY.");
 }
 
 export const configService = {
   get: <K extends keyof AppConfig>(key: K): AppConfig[K] => {
-    if (!config[key]) {
-      // This check is a safeguard; primary validation is above.
-      throw new Error(`Configuration key ${String(key)} is not set.`);
-    }
     return config[key];
   },
-  // Potentially add a method to check if running in development/production
-  // isDevelopment: process.env.NODE_ENV === 'development',
 };
