@@ -4,7 +4,7 @@ import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useUI } from '@/hooks/useUI';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { logService } from '@/services/logService';
+import { logService, type LogEntry } from '@/services/logService';
 // import { ErrorDisplay } from '@/components/ui/ErrorDisplay'; // Removed as it's not used directly here
 
 // Lazy load components (only include components that actually exist)
@@ -21,10 +21,25 @@ const PobInput = lazy(() => import('@/components/features/import/PobInput').then
 
 const AppLayout: React.FC = () => {
   const [isDebugConsoleVisible, setIsDebugConsoleVisible] = useState(logService.isConsoleVisible());
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [query, setQuery] = useState('');
+  const [levelFilter, setLevelFilter] = useState<'ALL' | 'INFO' | 'ERROR' | 'DEBUG'>('ALL');
+  const [autoScroll, setAutoScroll] = useState(true);
+  const consoleBodyRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {
     logService.subscribeVisibility(() => {
       setIsDebugConsoleVisible(logService.isConsoleVisible());
     });
+    const unsubscribe = logService.subscribe((newLogs) => {
+      setLogs(newLogs);
+      if (autoScroll) {
+        requestAnimationFrame(() => {
+          const el = consoleBodyRef.current;
+          if (el) el.scrollTop = el.scrollHeight;
+        });
+      }
+    });
+    return () => { unsubscribe(); };
   }, []);
 
   const { view, error, resetAnalysis } = useAnalysis();
@@ -81,6 +96,111 @@ const AppLayout: React.FC = () => {
       <footer className="text-center p-6 opacity-50 text-sm" role="contentinfo">
         <p>&copy; {new Date().getFullYear()} CRT Futurism. All rights reserved.</p>
       </footer>
+
+      {isDebugConsoleVisible && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '300px',
+            background: 'rgba(0,0,0,0.85)',
+            borderTop: '1px solid var(--color-glow-secondary)',
+            zIndex: 60,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <div className="flex-row justify-between items-center p-2" style={{borderBottom: '1px solid var(--color-divider-default)'}}>
+            <div className="flex-row items-center gap-2">
+              <strong>Debug Console</strong>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Search logs..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{width: '240px', padding: '0.25rem 0.5rem'}}
+              />
+              <select
+                className="input-field"
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value as any)}
+                style={{width: '140px', padding: '0.25rem 0.5rem'}}
+              >
+                <option value="ALL">All Levels</option>
+                <option value="ERROR">Errors</option>
+                <option value="WARN">Warn</option>
+                <option value="INFO">Info</option>
+                <option value="DEBUG">Debug</option>
+              </select>
+              <label className="text-sm" style={{display:'flex',alignItems:'center',gap:'0.25rem'}}>
+                <input type="checkbox" checked={autoScroll} onChange={(e)=>setAutoScroll(e.target.checked)} /> Auto-scroll
+              </label>
+              <button
+                onClick={() => logService.clearLogs()}
+                className="button button-secondary"
+                style={{padding: '0.25rem 0.5rem', fontSize: '0.75rem'}}
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => {
+                  const errorsOnly = logs.filter(l => l.level === 'ERROR');
+                  const text = errorsOnly.map(l => `[${l.timestamp}] ${l.level} ${l.message} ${l.payload?JSON.stringify(l.payload):''}`).join('\n');
+                  navigator.clipboard.writeText(text).catch(()=>{});
+                }}
+                className="button button-secondary"
+                style={{padding: '0.25rem 0.5rem', fontSize: '0.75rem'}}
+                aria-label="Copy Errors"
+              >Copy Errors</button>
+              <button
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(logs,null,2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = `logs-${Date.now()}.json`; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="button button-secondary"
+                style={{padding: '0.25rem 0.5rem', fontSize: '0.75rem'}}
+              >Download</button>
+            </div>
+            <button onClick={logService.toggleVisibility} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>Close</button>
+          </div>
+          <div ref={consoleBodyRef} className="p-2" style={{overflowY: 'auto', fontSize: '0.875rem'}}>
+            {logs.length === 0 ? (
+              <div className="opacity-50">No logs yet.</div>
+            ) : (
+              logs
+                .filter(l => levelFilter==='ALL' ? true : l.level===levelFilter)
+                .filter(l => !query.trim() ? true : (`${l.message} ${l.payload?JSON.stringify(l.payload):''}`).toLowerCase().includes(query.toLowerCase()))
+                .map((entry) => {
+                  const isError = entry.level === 'ERROR';
+                  return (
+                    <div key={entry.id} style={{marginBottom: '0.25rem', borderLeft: isError ? '3px solid var(--color-status-error)' : undefined, paddingLeft: isError ? '0.5rem' : undefined}}>
+                      <span style={{opacity: 0.7}}>[{entry.timestamp}]</span>{' '}
+                      <span style={{fontWeight: 700, color: entry.level==='ERROR' ? 'var(--color-status-error)' : entry.level==='DEBUG' ? 'var(--color-interactive-primary)' : 'var(--color-status-warning)'}}>{entry.level}</span>{' '}
+                      <span>{entry.message}</span>
+                      {entry.payload && (
+                        <details className="expandable-suggestion" style={{marginTop: '0.25rem'}}>
+                          <summary>Details</summary>
+                          <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(entry.payload, null, 2)}</pre>
+                        </details>
+                      )}
+                      {isError && (
+                        <div className="text-sm" style={{opacity:0.8, marginTop:'0.25rem'}}>
+                          Hint: Check network tab for /api calls; ensure GEMINI and POESESSID are set; retry after 30s (PoE rate limits). 
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

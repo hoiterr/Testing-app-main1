@@ -4,8 +4,18 @@ import { PoeAnalysisResult, GroundingMetadata, SimulationResult, CraftingPlan, F
 import { logService } from './logService';
 import { configService } from './configService'; // New import
 
-// Initialize AI with API key from config service
-const ai = new GoogleGenAI({ apiKey: configService.get('GEMINI_API_KEY') });
+// Lazily initialize the GoogleGenAI client to avoid throwing during module import
+let ai: GoogleGenAI | null = null;
+const getAi = (): GoogleGenAI => {
+    if (!ai) {
+        const apiKey = configService.get('GEMINI_API_KEY');
+        if (!apiKey) {
+            throw new Error('GEMINI_API_KEY is not configured. For serverless functions, set it in Vercel Project Settings. For client-only chat, set VITE_GEMINI_API_KEY.');
+        }
+        ai = new GoogleGenAI({ apiKey });
+    }
+    return ai;
+};
 
 const safeJsonParse = <T>(text: string): T => {
     try {
@@ -51,7 +61,7 @@ export const preflightCheckPob = async (pobData: string): Promise<PreflightCheck
         ---
     `;
     try {
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -134,7 +144,7 @@ export const analyzePob = async (pobData: string, pobUrl: string, leagueContext:
 
     try {
         logService.debug("Sending prompt to Gemini API for analysis.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -189,7 +199,7 @@ export const findUpgrade = async (pobData: string, slot: string, budget: string,
     `;
     try {
         logService.debug("Sending prompt to Gemini for upgrade finder.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -243,7 +253,7 @@ export const generateLootFilter = async (analysis: PoeAnalysisResult, leagueCont
     `;
     try {
         logService.debug("Sending prompt to Gemini for loot filter generation.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -284,14 +294,14 @@ export const runSimulation = async (pobData: string, pobUrl: string, leagueConte
 
     try {
         logService.debug("Sending prompt to Gemini API for simulation.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
             }
         });
-
+        
         const rawText = response.text?.trim() ?? '';
         logService.debug("Received raw response from Gemini API for simulation.", { rawText });
         const simulationResult = safeJsonParse<SimulationResult>(rawText);
@@ -344,7 +354,7 @@ export const generateCraftingPlan = async (pobData: string, slot: string, league
 
     try {
         logService.debug("Sending prompt to Gemini API for crafting plan.", { slot });
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -387,7 +397,7 @@ export const generateFarmingStrategy = async (pobData: string, craftingCost: str
 
     try {
         logService.debug("Sending prompt to Gemini API for farming strategy.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -421,7 +431,7 @@ export const getMetagamePulse = async (leagueContext: string): Promise<MetagameP
     `;
     try {
         logService.debug("Sending prompt to Gemini API for metagame pulse.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -468,7 +478,7 @@ export const compareAnalyses = async (analysisA: PoeAnalysisResult, analysisB: P
 
     try {
         logService.debug("Sending prompt to Gemini API for comparison.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
         });
@@ -499,7 +509,7 @@ Initial Analysis Context:
 ${JSON.stringify(analysisResult, null, 2)}
     `;
 
-    const chat = ai.chats.create({
+    const chat = getAi().chats.create({
         model: 'gemini-2.5-flash',
         config: {
             systemInstruction: systemInstruction,
@@ -532,7 +542,7 @@ export const generateBuildGuide = async (analysis: PoeAnalysisResult): Promise<s
 
     try {
         logService.debug("Sending prompt to Gemini API for build guide generation.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
         });
@@ -577,7 +587,7 @@ export const generateLevelingPlan = async (pobData: string, leagueContext: strin
     `;
     try {
         logService.debug("Sending prompt to Gemini for leveling plan.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -618,7 +628,7 @@ export const tuneBuildForContent = async (analysis: PoeAnalysisResult, goal: Tun
     `;
     try {
         logService.debug("Sending prompt to Gemini for build tuning.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -652,7 +662,7 @@ export const generateBossingStrategy = async (analysis: PoeAnalysisResult): Prom
     `;
     try {
         logService.debug("Sending prompt to Gemini for bossing strategy.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -690,7 +700,7 @@ export const scoreBuildForLibrary = async (analysis: PoeAnalysisResult): Promise
     `;
     try {
         logService.debug("Sending prompt to Gemini for build scoring.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: { responseMimeType: "application/json" }
@@ -717,7 +727,7 @@ export const convertPoeJsonToPobXml = async (buildData: PoeApiBuildData): Promis
     `;
     try {
         logService.debug("Sending prompt to Gemini for JSON to XML conversion.");
-        const response = await ai.models.generateContent({
+        const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {

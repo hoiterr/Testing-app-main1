@@ -3,7 +3,7 @@ import React from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useHistory } from '@/hooks/useHistory';
 import { useError } from '@/contexts/ErrorContext';
-import type { TimelessJewelSuggestion, ClusterJewelSuggestion, TreeOptimizationSuggestion } from '@/types'; // Import specific types
+import type { ClusterJewelSuggestion, TreeOptimizationSuggestion } from '@/types'; // Import specific types
 
 const SimulationView: React.FC = () => {
     const { pobInput, pobUrl, leagueContext } = useAnalysis();

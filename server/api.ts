@@ -14,7 +14,7 @@ import { convertPoeJsonToPobXml as geminiConvertPoeJsonToPobXml } from '../servi
 
 export const getAccountCharacters = async (accountName: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}`;
+    const targetUrl = `https://www.pathofexile.com/account/view-profile/${encodeURIComponent(accountName)}/characters?realm=pc`;
     try {
         const response = await fetchProxied(targetUrl);
         const responseText = await response.text();
@@ -59,8 +59,8 @@ export const getAccountCharacters = async (accountName: string): Promise<PoeChar
 
 const getCharacterBuildDataFromPoeApi = async (accountName: string, characterName: string): Promise<PoeApiBuildData> => {
     logService.info("Fallback: Fetching build data directly from PoE API", { accountName, characterName });
-    const itemsTargetUrl = `https://www.pathofexile.com/character-window/get-items?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}`;
-    const passivesTargetUrl = `https://www.pathofexile.com/character-window/get-passive-skills?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}`;
+    const itemsTargetUrl = `https://www.pathofexile.com/character-window/get-items?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}&realm=pc`;
+    const passivesTargetUrl = `https://www.pathofexile.com/character-window/get-passive-skills?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}&realm=pc`;
     
     try {
         const [itemsResponse, passivesResponse] = await Promise.all([

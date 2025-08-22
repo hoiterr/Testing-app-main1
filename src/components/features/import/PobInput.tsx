@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
-import { AnalysisGoal, LeagueContext } from '@/types';
+import { type AnalysisGoal, type LeagueContext } from '@/types';
 import { logService } from '@/services/logService';
 import { decodePobCode, isPobCode } from '@/services/pobUtils';
 import { useError } from '@/contexts/ErrorContext';
@@ -76,6 +76,39 @@ const AccountImportView: React.FC = () => {
     const { showError } = useError();
     
     const isBusy = isFetchingCharacters || isFetchingPobData;
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [poeSessid, setPoeSessid] = useState<string>(() => {
+        try { return localStorage.getItem('poe-sessid') || ''; } catch { return ''; }
+    });
+    const [sessStatus, setSessStatus] = useState<string>('');
+    
+    const getCookie = (name: string): string | null => {
+        try {
+            const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+            return m ? decodeURIComponent(m[1]) : null;
+        } catch { return null; }
+    };
+    
+    const applySessid = () => {
+        try {
+            if (!poeSessid.trim()) {
+                // Clear
+                document.cookie = 'POESESSID=; path=/; max-age=0';
+                try { localStorage.removeItem('poe-sessid'); } catch {}
+                setSessStatus('Cleared');
+                showError('Cleared POESESSID from this app session.', 'info');
+                return;
+            }
+            // Persist for 30 days
+            document.cookie = `POESESSID=${encodeURIComponent(poeSessid.trim())}; path=/; max-age=2592000`;
+            try { localStorage.setItem('poe-sessid', poeSessid.trim()); } catch {}
+            setSessStatus('Saved');
+            showError('POESESSID saved for this app domain. Try FETCH again.', 'info');
+        } catch (e) {
+            setSessStatus('Error');
+            showError('Could not set POESESSID cookie. Try manual import or check browser settings.', 'error');
+        }
+    };
     
     useEffect(() => {
         if (error) {
@@ -165,10 +198,10 @@ const AccountImportView: React.FC = () => {
         <div className="flex-col gap-4">
              <div>
                 <label htmlFor="account-name" className="block text-lg text-yellow mb-2">
-                    PoE Account Name
+                    PoE Account Handle
                 </label>
                 <p className="text-sm opacity-70 mb-4">
-                    Enter your account name. Your profile must be set to public on pathofexile.com.
+                    Enter your full handle including the discriminator. Example: <code>Hettii#6037</code>. Your profile must be set to public on pathofexile.com.
                 </p>
                 <div className="flex-row gap-2">
                     <input
@@ -176,21 +209,41 @@ const AccountImportView: React.FC = () => {
                         type="text"
                         className="input-field"
                         style={{flexGrow: 1}}
-                        placeholder="YourAccountName"
+                        placeholder="e.g., Hettii#6037"
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                         disabled={isBusy}
                         onKeyDown={(e) => e.key === 'Enter' && handleFetchCharacters()}
                     />
-                     <button
-                        onClick={handleFetchCharacters}
-                        disabled={isBusy || !accountName.trim()}
-                        className="button text-black"
-                        style={{backgroundColor: 'var(--color-sky)'}}
+                    <button onClick={handleFetchCharacters} disabled={isBusy || !accountName.trim()} className="button button-primary" style={{padding: '0.5rem 1rem'}}>FETCH</button>
+                </div>
+                <div className="mt-2">
+                    <button
+                        onClick={() => setShowAdvanced(v => !v)}
+                        className="chromatic-aberration text-sm text-sky"
+                        style={{background: 'none', border: 'none', cursor: 'pointer'}}
                     >
-                        Fetch
+                        {showAdvanced ? 'Hide Advanced' : 'Advanced'}
                     </button>
                 </div>
+                {showAdvanced && (
+                    <div className="mt-2 p-3" style={{backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid var(--color-divider)'}}>
+                        <p className="text-sm opacity-70 mb-2">Optional: paste your <code>POESESSID</code> (session cookie) if PoE still blocks public API requests in your region. Paste to enable private/gated character fetching. Leave empty and click Save to clear.</p>
+                        <div className="flex-row gap-2">
+                            <input
+                                type="password"
+                                className="input-field"
+                                placeholder="POESESSID value"
+                                value={poeSessid}
+                                onChange={(e) => setPoeSessid(e.target.value)}
+                                style={{flexGrow: 1}}
+                                autoComplete="off"
+                            />
+                            <button onClick={applySessid} className="button button-secondary" style={{padding: '0.5rem 1rem'}}>Save</button>
+                        </div>
+                        <div className="text-sm mt-2 opacity-70">Status: {sessStatus || (getCookie('POESESSID') ? 'Detected' : 'Not set')}</div>
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -265,9 +318,14 @@ const ManualImportView: React.FC = () => {
                     <label htmlFor="pob-input" className="block text-lg text-yellow">
                         Step 1: Path of Building Data
                     </label>
-                    <button onClick={handlePaste} disabled={isLoading || showPreflight} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
-                        <span>Paste your Path of Building pastebin link or import code here.</span>
-                        <span>Paste</span>
+                    <button
+                        onClick={handlePaste}
+                        disabled={isLoading || showPreflight}
+                        className="button button-secondary"
+                        style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem', color: '#fff'}}
+                        aria-label="Paste"
+                    >
+                        PASTE
                     </button>
                 </div>
                 <p className="text-sm opacity-70 mb-4">
@@ -357,42 +415,39 @@ const PobInput: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-grow">
-          <span>Select the league context for the character.</span>
-          <label htmlFor="league-context" className="block text-lg text-yellow mb-2">
-            League Context:
-          </label>
-          <select
-            id="league-context"
-            className="input-field"
-            value={leagueContext}
-            onChange={(e) => setLeagueContext(e.target.value as LeagueContext)}
-            disabled={isLoading || showPreflight}
-          >
-            <option value="Standard">Standard</option>
-            <option value="Hardcore">Hardcore</option>
-            <option value="SSF">SSF</option>
-            <option value="HCSSF">HCSSF</option>
-          </select>
+      <div className="flex flex-col gap-4">
+        <div>
+          <span className="block mb-2">Select the league context for the character.</span>
+          <div className="segmented-toggle" role="group" aria-label="League Context">
+            {(['League Start','Mid-League','Endgame'] as LeagueContext[]).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`toggle-option ${leagueContext === opt ? 'active' : ''}`}
+                onClick={() => setLeagueContext(opt)}
+                disabled={isLoading || showPreflight}
+              >
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex-grow">
-          <span>Select the analysis goal for the character.</span>
-          <label htmlFor="analysis-goal" className="block text-lg text-yellow mb-2">
-            Analysis Goal:
-          </label>
-          <select
-            id="analysis-goal"
-            className="input-field"
-            value={analysisGoal}
-            onChange={(e) => setAnalysisGoal(e.target.value as any)}
-            disabled={isLoading || showPreflight}
-          >
-            <option value="Build">Build</option>
-            <option value="Item">Item</option>
-            <option value="Passive">Passive</option>
-            <option value="Skill">Skill</option>
-          </select>
+
+        <div>
+          <span className="block mb-2">Select the analysis goal for the character.</span>
+          <div className="segmented-toggle" role="group" aria-label="Analysis Goal">
+            {(['All-Rounder','Mapping','Bossing'] as AnalysisGoal[]).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`toggle-option ${analysisGoal === opt ? 'active' : ''}`}
+                onClick={() => setAnalysisGoal(opt)}
+                disabled={isLoading || showPreflight}
+              >
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

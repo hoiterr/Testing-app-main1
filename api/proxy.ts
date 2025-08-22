@@ -12,19 +12,25 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
 
     try {
+        // Optional cookie pass-through: client may send x-poe-cookie with POESESSID=...
+        const poeCookie = request.headers['x-poe-cookie'] as string | undefined;
+
         const fetchResponse = await fetch(targetUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*'
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Referer': 'https://www.pathofexile.com/account/view-profile',
+                'Origin': 'https://www.pathofexile.com',
+                ...(poeCookie ? { 'Cookie': poeCookie } : {}),
             },
         });
 
-        // Forward headers and status from the target response
+        // Forward headers and status from the target response (including content-encoding!)
         fetchResponse.headers.forEach((value, key) => {
-            // Vercel handles content-encoding automatically
-            if (key.toLowerCase() !== 'content-encoding') {
-                response.setHeader(key, value);
-            }
+            response.setHeader(key, value);
         });
         
         // Set CORS headers
@@ -33,6 +39,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
         // Pipe the body through
         response.status(fetchResponse.status);
+        // Stream raw body through (browser will handle decompression when header is present)
         const body = await fetchResponse.arrayBuffer();
         response.send(Buffer.from(body));
 
