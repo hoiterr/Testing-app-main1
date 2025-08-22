@@ -2,7 +2,6 @@
 
 import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy, MetagamePulseResult } from '@/types';
 import * as poeApi from './poeApi';
-import { createChat } from './geminiService';
 
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
@@ -32,14 +31,26 @@ async function callAiApi<T>(action: string, data: any): Promise<T> {
         body: JSON.stringify({ action, data }),
     });
 
-    const result = await response.json();
+    // Read the body only once. If parsing as JSON fails, fall back to text for error diagnostics.
+    const rawText = await response.text();
 
     if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorBody}`);
+        // Try to extract structured error first
+        try {
+            const maybeJson = JSON.parse(rawText);
+            const message = (maybeJson && (maybeJson.error || maybeJson.message)) || rawText;
+            throw new Error(`API call failed: ${response.status} ${response.statusText} - ${message}`);
+        } catch {
+            throw new Error(`API call failed: ${response.status} ${response.statusText} - ${rawText}`);
+        }
     }
-    
-    return result as T;
+
+    try {
+        return JSON.parse(rawText) as T;
+    } catch {
+        // Some endpoints intentionally return plain strings (e.g., summaries/markdown)
+        return rawText as unknown as T;
+    }
 }
 
 export const preflightCheckPob = (pobData: string): Promise<PreflightCheckResult> => {
@@ -143,8 +154,3 @@ export const publishBuild = async (build: PublicBuild): Promise<void> => {
         throw new Error("Could not save build to the public library.");
     }
 };
-
-// Chat initialization is a special case. It uses the geminiService directly but only to configure the chat object.
-// The actual API calls within the chat will be handled by the client-side Gemini SDK, which is fine as long as the initial context (system prompt) is set up.
-// No API key is exposed here.
-export { createChat };

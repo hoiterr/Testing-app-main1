@@ -1,5 +1,5 @@
 
-import pako from 'pako';
+import * as pako from 'pako';
 import { logService } from './logService';
 
 /**

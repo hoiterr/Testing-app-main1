@@ -1,15 +1,13 @@
 
 import React, { createContext, useState, useCallback } from 'react';
 import { ChatMessage, PoeAnalysisResult } from '@/types';
-import { Chat } from '@google/genai';
-import { createChat } from '@/services/geminiService';
 import { logService } from '@/services/logService';
 
 type ProactiveTopic = 'welcome' | 'gear' | 'tree' | 'gems' | 'flasks' | 'synergy' | 'defenses' | 'leveling' | 'lootFilter' | 'crafting' | 'simulations' | 'metagame' | 'improvements';
 
 
 interface ChatContextType {
-    chat: Chat | null;
+    chat: null; // Chat temporarily disabled on client to avoid bundling AI SDK
     chatMessages: ChatMessage[];
     isChatLoading: boolean;
     promptSuggestions: string[];
@@ -24,14 +22,12 @@ interface ChatContextType {
 export const ChatContext = createContext<ChatContextType | null>(null);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [chat, setChat] = useState<Chat | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
     const [promptSuggestions, setChatPromptSuggestions] = useState<string[]>([]);
     const [proactiveMessagesSent, setProactiveMessagesSent] = useState<Set<string>>(new Set());
 
     const resetChat = () => {
-        setChat(null);
         setChatMessages([]);
         setChatPromptSuggestions([]);
         setProactiveMessagesSent(new Set());
@@ -39,8 +35,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeChat = (analysisResult: PoeAnalysisResult) => {
         resetChat();
-        const chatSession = createChat(analysisResult);
-        setChat(chatSession);
+        // Chat session creation is disabled client-side for security. Server handles AI.
 
         const suggestions: string[] = [];
         if (analysisResult.passiveTreeAnalysis.nodesToRespec.length > 0) suggestions.push("Explain the passive tree changes.");
@@ -73,42 +68,33 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         const messageContent = messages[topic];
         if (messageContent) {
-            setChatMessages(prev => [...prev, { role: 'model', content: messageContent }]);
-            setProactiveMessagesSent(prev => new Set(prev).add(topic));
+            setChatMessages((prev: ChatMessage[]) => [...prev, { role: 'model', content: messageContent }]);
+            setProactiveMessagesSent((prev: Set<string>) => new Set(prev).add(topic));
         }
     }, [proactiveMessagesSent, isChatLoading]);
 
     const handleSendMessage = useCallback(async (message: string) => {
-        if (!chat) return;
         if (promptSuggestions.length > 0) setChatPromptSuggestions([]);
         setIsChatLoading(true);
         const userMessage: ChatMessage = { role: 'user', content: message };
-        setChatMessages(prev => [...prev, userMessage, { role: 'model', content: '' }]);
+        setChatMessages((prev: ChatMessage[]) => [...prev, userMessage, { role: 'model', content: '' }]);
         try {
-            const stream = await chat.sendMessageStream({ message });
-            let text = '';
-            for await (const chunk of stream) {
-                text += chunk.text;
-                setChatMessages(prev => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1].content = text;
-                    return newMessages;
-                });
-            }
-        } catch (err) {
-            logService.error("Failed to send chat message.", { error: err });
-            setChatMessages(prev => {
+            // Chat is disabled on client. Provide helpful notice.
+            const notice = 'Interactive chat is temporarily disabled on the client for security. Use the generated analysis and suggestions. (Coming soon via secure server endpoints)';
+            setChatMessages((prev: ChatMessage[]) => {
                 const newMessages = [...prev];
-                newMessages[newMessages.length - 1].content = "Sorry, I encountered an error.";
+                newMessages[newMessages.length - 1].content = notice;
                 return newMessages;
             });
+        } catch (err) {
+            logService.error("Failed to handle chat message.", { error: err });
         } finally {
             setIsChatLoading(false);
         }
-    }, [chat, promptSuggestions]);
+    }, [promptSuggestions]);
     
     const value = {
-        chat,
+        chat: null,
         chatMessages,
         isChatLoading,
         promptSuggestions,
