@@ -6,6 +6,17 @@ import {
 import { logService } from './logService';
 import { decodePobCode } from './pobUtils';
 import { fetchProxied } from "./proxyClient";
+// Utility: read POESESSID cookie from current domain (user can paste it here for private/gated access)
+const getPoeCookieHeader = (): string | undefined => {
+    try {
+        if (typeof document === 'undefined') return undefined;
+        const m = document.cookie.match(/(?:^|;\s*)POESESSID=([^;]+)/);
+        if (!m) return undefined;
+        return `POESESSID=${decodeURIComponent(m[1])}`;
+    } catch {
+        return undefined;
+    }
+}
 
 
 // This file handles direct interactions with the Path of Exile website
@@ -16,7 +27,8 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
     logService.info("getAccountCharacters started", { accountName });
     const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}&realm=pc`;
     try {
-        const response = await fetchProxied(targetUrl, poeCookie);
+        const cookie = poeCookie ?? getPoeCookieHeader();
+        const response = await fetchProxied(targetUrl, cookie);
         const contentType = response.headers.get('content-type') || '';
         const responseText = await response.text();
         
@@ -74,9 +86,10 @@ const getCharacterBuildDataFromPoeApi = async (accountName: string, characterNam
     const passivesTargetUrl = `https://www.pathofexile.com/character-window/get-passive-skills?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}&realm=pc`;
     
     try {
+        const cookie = poeCookie ?? getPoeCookieHeader();
         const [itemsResponse, passivesResponse] = await Promise.all([
-            fetchProxied(itemsTargetUrl, poeCookie),
-            fetchProxied(passivesTargetUrl, poeCookie)
+            fetchProxied(itemsTargetUrl, cookie),
+            fetchProxied(passivesTargetUrl, cookie)
         ]);
 
         const itemsData = await itemsResponse.json();
