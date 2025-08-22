@@ -1,6 +1,6 @@
 // Minimal Node environment declarations for serverless context without pulling full @types/node
 declare const process: any;
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { logService } from "../src/services/logService";
 import {
   PoeAnalysisResult,
@@ -512,7 +512,7 @@ export const compareAnalyses = async (
   }
 };
 
-export const createChat = (analysisResult: PoeAnalysisResult): Chat => {
+export const createChat = (analysisResult: PoeAnalysisResult): any => {
   logService.info("Creating new chat session.");
   const systemInstruction = `
 You are a world-class Path of Exile expert continuing a conversation with a player about their build.

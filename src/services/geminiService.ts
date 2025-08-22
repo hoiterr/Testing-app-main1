@@ -1,12 +1,12 @@
 
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { PoeAnalysisResult, GroundingMetadata, SimulationResult, CraftingPlan, FarmingStrategy, MetagamePulseResult, PreflightCheckResult, AnalysisGoal, LootFilter, LevelingPlan, TuningGoal, TuningResult, BossingStrategyGuide, AIScores, PoeApiBuildData } from '../types';
 import { logService } from './logService';
 import { configService } from './configService'; // New import
 
 // Lazily initialize the GoogleGenAI client to avoid throwing during module import
-let ai: GoogleGenAI | null = null;
-const getAi = (): GoogleGenAI => {
+let ai: any = null;
+const getAi = (): any => {
     if (!ai) {
         const apiKey = configService.get('GEMINI_API_KEY');
         if (!apiKey) {
@@ -157,11 +157,11 @@ export const analyzePob = async (pobData: string, pobUrl: string, leagueContext:
         
         const analysis = safeJsonParse<PoeAnalysisResult>(rawText);
         
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+        const groundingChunks: any[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
         const groundingMetadata: GroundingMetadata[] = groundingChunks
-            .map(chunk => chunk.web)
-            .filter((web): web is { uri: string; title: string } => !!web?.uri && !!web.title)
-            .map(web => ({ uri: web.uri, title: web.title.trim() }));
+            .map((chunk: any) => chunk.web)
+            .filter((web: any): web is { uri: string; title: string } => !!web?.uri && !!web.title)
+            .map((web: { uri: string; title: string }) => ({ uri: web.uri, title: web.title.trim() }));
         
         const uniqueMetadata = Array.from(new Map(groundingMetadata.map(item => [item.uri, item])).values());
         analysis.groundingMetadata = uniqueMetadata;
@@ -493,7 +493,7 @@ export const compareAnalyses = async (analysisA: PoeAnalysisResult, analysisB: P
 };
 
 
-export const createChat = (analysisResult: PoeAnalysisResult): Chat => {
+export const createChat = (analysisResult: PoeAnalysisResult): any => {
     logService.info("Creating new chat session.");
     const systemInstruction = `
 You are a world-class Path of Exile expert continuing a conversation with a player about their build.
