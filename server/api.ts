@@ -14,7 +14,7 @@ import { convertPoeJsonToPobXml as geminiConvertPoeJsonToPobXml } from '../servi
 
 export const getAccountCharacters = async (accountName: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}&realm=pc`;
+    const targetUrl = `https://www.pathofexile.com/account/view-profile/${encodeURIComponent(accountName)}/characters?realm=pc`;
     try {
         const response = await fetchProxied(targetUrl);
         const responseText = await response.text();

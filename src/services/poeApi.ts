@@ -25,7 +25,8 @@ const getPoeCookieHeader = (): string | undefined => {
 
 export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}&realm=pc`;
+    // Support both handle styles: Hettii#6037 vs Hettii-6037
+    const targetUrl = `https://www.pathofexile.com/account/view-profile/${encodeURIComponent(accountName)}/characters?realm=pc`;
     try {
         const cookie = poeCookie ?? getPoeCookieHeader();
         const response = await fetchProxied(targetUrl, cookie);
@@ -33,29 +34,38 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
         const responseText = await response.text();
         
         try {
-            const data = contentType.includes('application/json')
-                ? JSON.parse(responseText)
-                : JSON.parse(responseText.trim());
+            const isJson = contentType.includes('application/json');
+            const looksLikeJson = responseText.trim().startsWith('{') || responseText.trim().startsWith('[');
+            const data = isJson || looksLikeJson ? JSON.parse(responseText) : null as any;
             
-            if (data.error) {
+            if (data && data.error) {
                 const errorMessage = data.error.message || (typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
                  if (errorMessage.toLowerCase().includes("private")) {
                     throw new Error(`Account "${accountName}" profile is private. Please set it to public on pathofexile.com.`);
                 }
                 throw new Error(`API Error: ${errorMessage}`);
             }
-
-            if (!Array.isArray(data)) {
-                logService.error("Received unexpected data from character API", { responseText });
-                throw new Error('Received unexpected data from character API.');
+            // If JSON characters aren't returned, parse the HTML characters list instead
+            if (data && Array.isArray(data)) {
+                logService.info("getAccountCharacters successful", { count: data.length });
+                return data.map((char: any) => ({ name: char.name, class: char.class, level: char.level }));
             }
-
-            logService.info("getAccountCharacters successful", { count: data.length });
-            return data.map((char: any) => ({
-                name: char.name,
-                class: char.class,
-                level: char.level
-            }));
+            // HTML parsing fallback
+            const names: string[] = [];
+            const html = responseText;
+            // Characters are listed as <div class="character-info">...<span class="name">NAME</span>
+            const nameRegex = /class=\"name\"[^>]*>([^<]+)/g;
+            let m: RegExpExecArray | null;
+            while ((m = nameRegex.exec(html)) !== null) {
+                names.push(m[1]);
+            }
+            if (names.length === 0) {
+                logService.error("Failed to parse character list from profile HTML", { snippet: html.slice(0, 300) });
+                throw new Error('Could not read characters from profile page.');
+            }
+            const characters = names.map(n => ({ name: n, class: 'Unknown', level: 0 }));
+            logService.info("getAccountCharacters parsed from HTML", { count: characters.length });
+            return characters;
         } catch (e) {
             // Many times PoE returns an HTML page (e.g., login) instead of JSON.
             const looksLikeHtml = responseText.trim().startsWith('<') || responseText.includes('<html');

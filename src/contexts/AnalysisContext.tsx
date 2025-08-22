@@ -199,8 +199,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleFetchCharacters = useCallback(async () => {
     if (!accountName.trim()) { setError("Please enter an account name."); return; }
-    // Normalize common inputs like 'Name#1234' and leading '@'
-    const normalizedAccount = accountName.trim().replace(/^@/, '').split('#')[0];
+    // Normalize: accept @Name, Name#1234, or Name-1234 (PoE profile handle uses '-')
+    const normalizedAccount = accountName.trim().replace(/^@/, '').replace('#', '-');
     setIsFetchingCharacters(true);
     setError(null);
     setCharacters([]);
@@ -255,7 +255,7 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPreflightResult(null);
     logService.info("Fetching PoB data for character", { account, character });
     try {
-        const normalizedAccount = account.trim().replace(/^@/, '').split('#')[0];
+        const normalizedAccount = account.trim().replace(/^@/, '').replace('#', '-');
         const { pobData, pobUrl } = await apiClient.fetchPobFromAccount(normalizedAccount, character);
         setPobInput(pobData);
         setPobUrl(pobUrl);
