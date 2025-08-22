@@ -3,18 +3,20 @@ import { logService } from './logService';
 
 // This function is now the CLIENT-SIDE entrypoint to our proxy.
 // It calls our own backend (/api/proxy) which then performs the actual fetch.
-
+export const fetchProxied = async (url: string, poeCookie?: string): Promise<Response> => {
     const proxyUrl = `/api/proxy?targetUrl=${encodeURIComponent(url)}`;
     const maxAttempts = 3;
     const baseDelayMs = 300;
     const timeoutMs = 15_000;
 
-
-
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const response = await fetch(proxyUrl, { signal: controller.signal });
+            const response = await fetch(proxyUrl, {
+                signal: controller.signal,
+                headers: poeCookie ? { 'x-poe-cookie': poeCookie } : undefined,
+            });
             clearTimeout(timeout);
 
             if (!response.ok) {
