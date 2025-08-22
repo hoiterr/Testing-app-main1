@@ -6,8 +6,8 @@ import { createChat } from './geminiService';
 
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
-export const getAccountCharacters = async (accountName: string): Promise<PoeCharacter[]> => {
-    return poeApi.getAccountCharacters(accountName);
+export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
+    return poeApi.getAccountCharacters(accountName, poeCookie);
 };
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.

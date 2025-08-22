@@ -12,11 +12,11 @@ import { fetchProxied } from "./proxyClient";
 // via our client-side proxy caller. All AI-related logic is handled by the /api/ai.ts
 // Vercel serverless function.
 
-export const getAccountCharacters = async (accountName: string): Promise<PoeCharacter[]> => {
+export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}`;
+    const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}&realm=pc`;
     try {
-        const response = await fetchProxied(targetUrl);
+        const response = await fetchProxied(targetUrl, poeCookie);
         const contentType = response.headers.get('content-type') || '';
         const responseText = await response.text();
         
@@ -68,15 +68,15 @@ export const getAccountCharacters = async (accountName: string): Promise<PoeChar
     }
 };
 
-const getCharacterBuildDataFromPoeApi = async (accountName: string, characterName: string): Promise<PoeApiBuildData> => {
+const getCharacterBuildDataFromPoeApi = async (accountName: string, characterName: string, poeCookie?: string): Promise<PoeApiBuildData> => {
     logService.info("Fallback: Fetching build data directly from PoE API", { accountName, characterName });
-    const itemsTargetUrl = `https://www.pathofexile.com/character-window/get-items?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}`;
-    const passivesTargetUrl = `https://www.pathofexile.com/character-window/get-passive-skills?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}`;
+    const itemsTargetUrl = `https://www.pathofexile.com/character-window/get-items?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}&realm=pc`;
+    const passivesTargetUrl = `https://www.pathofexile.com/character-window/get-passive-skills?character=${encodeURIComponent(characterName)}&accountName=${encodeURIComponent(accountName)}&realm=pc`;
     
     try {
         const [itemsResponse, passivesResponse] = await Promise.all([
-            fetchProxied(itemsTargetUrl),
-            fetchProxied(passivesTargetUrl)
+            fetchProxied(itemsTargetUrl, poeCookie),
+            fetchProxied(passivesTargetUrl, poeCookie)
         ]);
 
         const itemsData = await itemsResponse.json();

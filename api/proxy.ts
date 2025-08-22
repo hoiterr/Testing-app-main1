@@ -12,10 +12,14 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
 
     try {
+        // Optional cookie pass-through: client may send x-poe-cookie with POESESSID=...
+        const poeCookie = request.headers['x-poe-cookie'] as string | undefined;
+
         const fetchResponse = await fetch(targetUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*'
+                'Accept': 'application/json, text/plain, */*',
+                ...(poeCookie ? { 'Cookie': poeCookie } : {}),
             },
         });
 

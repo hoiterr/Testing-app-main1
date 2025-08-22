@@ -3,7 +3,7 @@ import { logService } from './logService';
 
 // This function is now the CLIENT-SIDE entrypoint to our proxy.
 // It calls our own backend (/api/proxy) which then performs the actual fetch.
-export const fetchProxied = async (url: string): Promise<Response> => {
+export const fetchProxied = async (url: string, poeCookie?: string): Promise<Response> => {
     // The Vercel function lives at /api/proxy.
     // We pass the URL we want to fetch as a query parameter.
     const proxyUrl = `/api/proxy?targetUrl=${encodeURIComponent(url)}`;
@@ -11,7 +11,9 @@ export const fetchProxied = async (url: string): Promise<Response> => {
     logService.debug(`[Client] Fetching via Vercel proxy: ${url}`);
 
     try {
-        const response = await fetch(proxyUrl);
+        const response = await fetch(proxyUrl, {
+            headers: poeCookie ? { 'x-poe-cookie': poeCookie } : undefined,
+        });
 
         if (!response.ok) {
             const responseBody = await response.text();
