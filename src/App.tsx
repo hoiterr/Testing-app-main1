@@ -25,8 +25,8 @@ export const App: React.FC<AppProps> = () => {
         <ErrorProvider>
             <UIProvider>
                 <HistoryProvider>
-                    <AnalysisProvider>
-                        <ChatProvider>
+                    <ChatProvider>
+                        <AnalysisProvider>
                             <OnboardingProvider>
                                 <ThemeProvider> {/* Wrap with ThemeProvider */}
                                     <AppProvider>
@@ -38,8 +38,8 @@ export const App: React.FC<AppProps> = () => {
                                     </AppProvider>
                                 </ThemeProvider>
                             </OnboardingProvider>
-                        </ChatProvider>
-                    </AnalysisProvider>
+                        </AnalysisProvider>
+                    </ChatProvider>
                 </HistoryProvider>
             </UIProvider>
         </ErrorProvider>
