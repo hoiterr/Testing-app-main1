@@ -265,9 +265,14 @@ const ManualImportView: React.FC = () => {
                     <label htmlFor="pob-input" className="block text-lg text-yellow">
                         Step 1: Path of Building Data
                     </label>
-                    <button onClick={handlePaste} disabled={isLoading || showPreflight} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
-                        <span>Paste your Path of Building pastebin link or import code here.</span>
-                        <span>Paste</span>
+                    <button
+                        onClick={handlePaste}
+                        disabled={isLoading || showPreflight}
+                        className="button button-secondary"
+                        style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}
+                        aria-label="Paste"
+                    >
+                        Paste
                     </button>
                 </div>
                 <p className="text-sm opacity-70 mb-4">
@@ -357,42 +362,39 @@ const PobInput: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-grow">
-          <span>Select the league context for the character.</span>
-          <label htmlFor="league-context" className="block text-lg text-yellow mb-2">
-            League Context:
-          </label>
-          <select
-            id="league-context"
-            className="input-field"
-            value={leagueContext}
-            onChange={(e) => setLeagueContext(e.target.value as LeagueContext)}
-            disabled={isLoading || showPreflight}
-          >
-            <option value="Standard">Standard</option>
-            <option value="Hardcore">Hardcore</option>
-            <option value="SSF">SSF</option>
-            <option value="HCSSF">HCSSF</option>
-          </select>
+      <div className="flex flex-col gap-4">
+        <div>
+          <span className="block mb-2">Select the league context for the character.</span>
+          <div className="segmented-toggle" role="group" aria-label="League Context">
+            {(['League Start','Mid-League','Endgame'] as LeagueContext[]).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`toggle-option ${leagueContext === opt ? 'active' : ''}`}
+                onClick={() => setLeagueContext(opt)}
+                disabled={isLoading || showPreflight}
+              >
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex-grow">
-          <span>Select the analysis goal for the character.</span>
-          <label htmlFor="analysis-goal" className="block text-lg text-yellow mb-2">
-            Analysis Goal:
-          </label>
-          <select
-            id="analysis-goal"
-            className="input-field"
-            value={analysisGoal}
-            onChange={(e) => setAnalysisGoal(e.target.value as AnalysisGoal)}
-            disabled={isLoading || showPreflight}
-          >
-            <option value="Build">Build</option>
-            <option value="Item">Item</option>
-            <option value="Passive">Passive</option>
-            <option value="Skill">Skill</option>
-          </select>
+
+        <div>
+          <span className="block mb-2">Select the analysis goal for the character.</span>
+          <div className="segmented-toggle" role="group" aria-label="Analysis Goal">
+            {(['All-Rounder','Mapping','Bossing'] as AnalysisGoal[]).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`toggle-option ${analysisGoal === opt ? 'active' : ''}`}
+                onClick={() => setAnalysisGoal(opt)}
+                disabled={isLoading || showPreflight}
+              >
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

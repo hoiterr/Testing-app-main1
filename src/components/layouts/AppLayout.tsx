@@ -4,7 +4,7 @@ import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useUI } from '@/hooks/useUI';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { logService } from '@/services/logService';
+import { logService, type LogEntry } from '@/services/logService';
 // import { ErrorDisplay } from '@/components/ui/ErrorDisplay'; // Removed as it's not used directly here
 
 // Lazy load components (only include components that actually exist)
@@ -21,10 +21,13 @@ const PobInput = lazy(() => import('@/components/features/import/PobInput').then
 
 const AppLayout: React.FC = () => {
   const [isDebugConsoleVisible, setIsDebugConsoleVisible] = useState(logService.isConsoleVisible());
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   useEffect(() => {
     logService.subscribeVisibility(() => {
       setIsDebugConsoleVisible(logService.isConsoleVisible());
     });
+    const unsubscribe = logService.subscribe((newLogs) => setLogs(newLogs));
+    return () => { unsubscribe(); };
   }, []);
 
   const { view, error, resetAnalysis } = useAnalysis();
@@ -81,6 +84,41 @@ const AppLayout: React.FC = () => {
       <footer className="text-center p-6 opacity-50 text-sm" role="contentinfo">
         <p>&copy; {new Date().getFullYear()} CRT Futurism. All rights reserved.</p>
       </footer>
+
+      {isDebugConsoleVisible && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '240px',
+            background: 'rgba(0,0,0,0.85)',
+            borderTop: '1px solid var(--color-glow-secondary)',
+            zIndex: 60,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <div className="flex-row justify-between items-center p-4" style={{borderBottom: '1px solid var(--color-divider-default)'}}>
+            <strong>Debug Console</strong>
+            <button onClick={logService.toggleVisibility} className="button button-secondary" style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>Close</button>
+          </div>
+          <div className="p-4" style={{overflowY: 'auto', fontSize: '0.875rem'}}>
+            {logs.length === 0 ? (
+              <div className="opacity-50">No logs yet.</div>
+            ) : (
+              logs.map((entry) => (
+                <div key={entry.id} style={{marginBottom: '0.25rem'}}>
+                  <span style={{opacity: 0.7}}>[{entry.timestamp}]</span>{' '}
+                  <span style={{fontWeight: 700, color: 'var(--color-status-warning)'}}>{entry.level}</span>{' '}
+                  <span>{entry.message}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
