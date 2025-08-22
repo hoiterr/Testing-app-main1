@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useChat } from '@/hooks/useChat';
-import { AnalysisGoal, LeagueContext } from '@/types';
+import { type AnalysisGoal, type LeagueContext } from '@/types';
 import { logService } from '@/services/logService';
 import { decodePobCode, isPobCode } from '@/services/pobUtils';
 import { useError } from '@/contexts/ErrorContext';
@@ -385,7 +385,7 @@ const PobInput: React.FC = () => {
             id="analysis-goal"
             className="input-field"
             value={analysisGoal}
-            onChange={(e) => setAnalysisGoal(e.target.value as any)}
+            onChange={(e) => setAnalysisGoal(e.target.value as AnalysisGoal)}
             disabled={isLoading || showPreflight}
           >
             <option value="Build">Build</option>
