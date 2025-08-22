@@ -22,26 +22,26 @@ export const App: React.FC<AppProps> = () => {
     }, []);
 
     return (
-        <AppProvider>
-            <ErrorProvider>
-                <UIProvider>
-                    <HistoryProvider>
+        <ErrorProvider>
+            <UIProvider>
+                <HistoryProvider>
+                    <AnalysisProvider>
                         <ChatProvider>
-                            <AnalysisProvider>
-                                <OnboardingProvider>
-                                    <ThemeProvider> {/* Wrap with ThemeProvider */}
+                            <OnboardingProvider>
+                                <ThemeProvider> {/* Wrap with ThemeProvider */}
+                                    <AppProvider>
                                         <AppLayout />
                                         {/* Removed DebugConsole usage */}
                                         {/* <Suspense fallback={null}> 
                                             <DebugConsole />
                                         </Suspense> */}
-                                    </ThemeProvider>
-                                </OnboardingProvider>
-                            </AnalysisProvider>
+                                    </AppProvider>
+                                </ThemeProvider>
+                            </OnboardingProvider>
                         </ChatProvider>
-                    </HistoryProvider>
-                </UIProvider>
-            </ErrorProvider>
-        </AppProvider>
+                    </AnalysisProvider>
+                </HistoryProvider>
+            </UIProvider>
+        </ErrorProvider>
     );
 };
