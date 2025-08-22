@@ -25,7 +25,7 @@ const getPoeCookieHeader = (): string | undefined => {
 
 export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    // Support both handle styles: Hettii#6037 vs Hettii-6037
+    // Use the public profile route that accepts the full handle with discriminator
     const targetUrl = `https://www.pathofexile.com/account/view-profile/${encodeURIComponent(accountName)}/characters?realm=pc`;
     try {
         const cookie = poeCookie ?? getPoeCookieHeader();

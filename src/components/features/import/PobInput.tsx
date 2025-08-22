@@ -198,10 +198,10 @@ const AccountImportView: React.FC = () => {
         <div className="flex-col gap-4">
              <div>
                 <label htmlFor="account-name" className="block text-lg text-yellow mb-2">
-                    PoE Account Name
+                    PoE Account Handle
                 </label>
                 <p className="text-sm opacity-70 mb-4">
-                    Enter your account name. Your profile must be set to public on pathofexile.com.
+                    Enter your full handle including the discriminator. Example: <code>Hettii#6037</code>. Your profile must be set to public on pathofexile.com.
                 </p>
                 <div className="flex-row gap-2">
                     <input
@@ -209,7 +209,7 @@ const AccountImportView: React.FC = () => {
                         type="text"
                         className="input-field"
                         style={{flexGrow: 1}}
-                        placeholder="YourAccountName"
+                        placeholder="e.g., Hettii#6037"
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                         disabled={isBusy}
