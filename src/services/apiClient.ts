@@ -7,7 +7,13 @@ import { createChat } from './geminiService';
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
 export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
-    return poeApi.getAccountCharacters(accountName, poeCookie);
+    const params = new URLSearchParams({ handle: accountName, realm: 'pc' });
+    const resp = await fetch(`/api/poe?${params.toString()}`, {
+        headers: poeCookie ? { 'x-poe-cookie': poeCookie } : undefined,
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Failed to fetch characters');
+    return data.characters as PoeCharacter[];
 };
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
