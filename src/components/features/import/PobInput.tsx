@@ -182,14 +182,7 @@ const AccountImportView: React.FC = () => {
                         disabled={isBusy}
                         onKeyDown={(e) => e.key === 'Enter' && handleFetchCharacters()}
                     />
-                     <button
-                        onClick={handleFetchCharacters}
-                        disabled={isBusy || !accountName.trim()}
-                        className="button text-black"
-                        style={{backgroundColor: 'var(--color-sky)'}}
-                    >
-                        Fetch
-                    </button>
+                    <button onClick={handleFetchCharacters} disabled={isBusy || !accountName.trim()} className="button button-primary" style={{padding: '0.5rem 1rem'}}>FETCH</button>
                 </div>
             </div>
         </div>
@@ -269,10 +262,10 @@ const ManualImportView: React.FC = () => {
                         onClick={handlePaste}
                         disabled={isLoading || showPreflight}
                         className="button button-secondary"
-                        style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}
+                        style={{padding: '0.25rem 0.75rem', fontSize: '0.75rem', color: '#fff'}}
                         aria-label="Paste"
                     >
-                        Paste
+                        PASTE
                     </button>
                 </div>
                 <p className="text-sm opacity-70 mb-4">

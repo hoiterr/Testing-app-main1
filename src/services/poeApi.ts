@@ -17,10 +17,13 @@ export const getAccountCharacters = async (accountName: string): Promise<PoeChar
     const targetUrl = `https://www.pathofexile.com/character-window/get-characters?accountName=${encodeURIComponent(accountName)}`;
     try {
         const response = await fetchProxied(targetUrl);
+        const contentType = response.headers.get('content-type') || '';
         const responseText = await response.text();
         
         try {
-            const data = JSON.parse(responseText);
+            const data = contentType.includes('application/json')
+                ? JSON.parse(responseText)
+                : JSON.parse(responseText.trim());
             
             if (data.error) {
                 const errorMessage = data.error.message || (typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
@@ -42,7 +45,15 @@ export const getAccountCharacters = async (accountName: string): Promise<PoeChar
                 level: char.level
             }));
         } catch (e) {
-            logService.error("Failed to parse character data as JSON", { responseText, error: e });
+            // Many times PoE returns an HTML page (e.g., login) instead of JSON.
+            const looksLikeHtml = responseText.trim().startsWith('<') || responseText.includes('<html');
+            logService.error("Failed to parse character data as JSON", { responseText: looksLikeHtml ? '[HTML response elided]' : responseText, error: e });
+            if (looksLikeHtml) {
+                throw new Error(
+                    `The Path of Exile website returned HTML instead of JSON. This usually means the profile is private or PoE is blocking the request. ` +
+                    `Please ensure your account profile and character tabs are public on pathofexile.com.`
+                );
+            }
             if (responseText.includes("Account not found")) {
                  throw new Error(`Account "${accountName}" not found. Check the name and make sure your profile is public.`);
             }

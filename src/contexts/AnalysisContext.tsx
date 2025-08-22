@@ -199,6 +199,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleFetchCharacters = useCallback(async () => {
     if (!accountName.trim()) { setError("Please enter an account name."); return; }
+    // Normalize common inputs like 'Name#1234' and leading '@'
+    const normalizedAccount = accountName.trim().replace(/^@/, '').split('#')[0];
     setIsFetchingCharacters(true);
     setError(null);
     setCharacters([]);
@@ -206,9 +208,9 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPreflightResult(null);
     setPreflightError(null); 
     try {
-      const fetchedCharacters = await apiClient.getAccountCharacters(accountName);
+      const fetchedCharacters = await apiClient.getAccountCharacters(normalizedAccount);
       if (fetchedCharacters.length === 0) {
-        setError(`No characters found for account "${accountName}". The profile might be empty or private.`);
+        setError(`No characters found for account "${normalizedAccount}". Make sure the profile and character tabs are set to public on pathofexile.com.`);
       }
       setCharacters(fetchedCharacters);
     } catch (err: any) {
@@ -253,7 +255,8 @@ export const AnalysisProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPreflightResult(null);
     logService.info("Fetching PoB data for character", { account, character });
     try {
-        const { pobData, pobUrl } = await apiClient.fetchPobFromAccount(account, character);
+        const normalizedAccount = account.trim().replace(/^@/, '').split('#')[0];
+        const { pobData, pobUrl } = await apiClient.fetchPobFromAccount(normalizedAccount, character);
         setPobInput(pobData);
         setPobUrl(pobUrl);
         await handlePreflightCheck(pobData);
