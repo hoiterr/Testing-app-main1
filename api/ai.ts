@@ -368,9 +368,9 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           const { pobData, pobUrl, leagueContext, analysisGoal } = data;
           if (!pobData) throw new ApiError('pobData is required', 400);
           
-          // Type assertion with validation
-          if (!isPoeAnalysisResult(pobData)) {
-            throw new ApiError('Invalid POB data format', 400);
+          // Validate pobData is a non-empty string (raw PoB XML/code)
+          if (typeof pobData !== 'string' || pobData.trim().length === 0) {
+            throw new ApiError('pobData must be a non-empty string', 400);
           }
           const validGoals: AnalysisGoal[] = ['All-Rounder', 'Mapping', 'Bossing'];
           const goal = (analysisGoal && validGoals.includes(analysisGoal as AnalysisGoal) 
