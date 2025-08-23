@@ -72,20 +72,38 @@ function parseCharacterNamesFromHtml(html: string): string[] {
   return names;
 }
 
+function normalizePoeCookie(input?: string): string | undefined {
+  if (!input) return undefined;
+  let v = input.trim();
+  try {
+    // Some clients may send URL-encoded header like 'POESESSID%3Dabc'
+    v = decodeURIComponent(v);
+  } catch {}
+  // If user pasted just the session value (no '=') assume it's POESESSID
+  if (!v.includes('=')) {
+    return `POESESSID=${v}`;
+  }
+  // Ensure it actually contains POESESSID=; if not, pass-through anyway
+  return v;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const handle = req.query.handle as string | undefined;
+  const rawHandle = req.query.handle as string | undefined;
   const realm = (req.query.realm as string | undefined) || 'pc';
-  const poeCookie = (req.headers['x-poe-cookie'] as string | undefined) || '';
+  const poeCookieRaw = (req.headers['x-poe-cookie'] as string | undefined) || '';
 
-  if (!handle) return res.status(400).json({ error: 'Missing handle param (e.g., Hettii#6037)' });
+  if (!rawHandle) return res.status(400).json({ error: 'Missing handle param (e.g., Hettii#6037)' });
+  // Normalize handle: strip discriminator (e.g., '#6037') and trim
+  const handle = rawHandle.split('#')[0].trim();
 
   try {
     const headers: Record<string, string> = { ...DEFAULT_HEADERS };
+    const poeCookie = normalizePoeCookie(poeCookieRaw);
     if (poeCookie) headers['Cookie'] = poeCookie;
 
     const cacheKey = `${handle}|${realm}`;
