@@ -25,65 +25,49 @@ const getPoeCookieHeader = (): string | undefined => {
 
 export const getAccountCharacters = async (accountName: string, poeCookie?: string): Promise<PoeCharacter[]> => {
     logService.info("getAccountCharacters started", { accountName });
-    // Use the public profile route that accepts the full handle with discriminator
-    const targetUrl = `https://www.pathofexile.com/account/view-profile/${encodeURIComponent(accountName)}/characters?realm=pc`;
     try {
         const cookie = poeCookie ?? getPoeCookieHeader();
-        const response = await fetchProxied(targetUrl, cookie);
-        const contentType = response.headers.get('content-type') || '';
-        const responseText = await response.text();
-        
-        try {
-            const isJson = contentType.includes('application/json');
-            const looksLikeJson = responseText.trim().startsWith('{') || responseText.trim().startsWith('[');
-            const data = isJson || looksLikeJson ? JSON.parse(responseText) : null as any;
-            
-            if (data && data.error) {
-                const errorMessage = data.error.message || (typeof data.error === 'object' ? JSON.stringify(data.error) : data.error);
-                 if (errorMessage.toLowerCase().includes("private")) {
-                    throw new Error(`Account "${accountName}" profile is private. Please set it to public on pathofexile.com.`);
-                }
-                throw new Error(`API Error: ${errorMessage}`);
+        const url = `/api/poe?handle=${encodeURIComponent(accountName)}&realm=pc`;
+        const resp = await fetch(url, {
+            headers: cookie ? { 'x-poe-cookie': cookie } : undefined,
+        });
+        const text = await resp.text();
+        const ct = resp.headers.get('content-type') || '';
+
+        if (!resp.ok) {
+            // Try to parse error
+            try {
+                const errData = ct.includes('application/json') ? JSON.parse(text) : { error: text };
+                const msg = errData.error || errData.message || text || `Status ${resp.status}`;
+                throw new Error(String(msg));
+            } catch (e) {
+                throw new Error(text || `Request failed with status ${resp.status}`);
             }
-            // If JSON characters aren't returned, parse the HTML characters list instead
-            if (data && Array.isArray(data)) {
-                logService.info("getAccountCharacters successful", { count: data.length });
-                return data.map((char: any) => ({ name: char.name, class: char.class, level: char.level }));
-            }
-            // HTML parsing fallback
-            const names: string[] = [];
-            const html = responseText;
-            // Characters are listed as <div class="character-info">...<span class="name">NAME</span>
-            const nameRegex = /class=\"name\"[^>]*>([^<]+)/g;
-            let m: RegExpExecArray | null;
-            while ((m = nameRegex.exec(html)) !== null) {
-                names.push(m[1]);
-            }
-            if (names.length === 0) {
-                logService.error("Failed to parse character list from profile HTML", { snippet: html.slice(0, 300) });
-                throw new Error('Could not read characters from profile page.');
-            }
-            const characters = names.map(n => ({ name: n, class: 'Unknown', level: 0 }));
-            logService.info("getAccountCharacters parsed from HTML", { count: characters.length });
-            return characters;
-        } catch (e) {
-            // Many times PoE returns an HTML page (e.g., login) instead of JSON.
-            const looksLikeHtml = responseText.trim().startsWith('<') || responseText.includes('<html');
-            logService.error("Failed to parse character data as JSON", { responseText: looksLikeHtml ? '[HTML response elided]' : responseText, error: e });
-            if (looksLikeHtml) {
-                throw new Error(
-                    `The Path of Exile website returned HTML instead of JSON. This usually means the profile is private or PoE is blocking the request. ` +
-                    `Please ensure your account profile and character tabs are public on pathofexile.com.`
-                );
-            }
-            if (responseText.includes("Account not found")) {
-                 throw new Error(`Account "${accountName}" not found. Check the name and make sure your profile is public.`);
-            }
-            throw new Error("The character API returned an invalid response. The PoE website might be having issues.");
         }
+
+        const data = ct.includes('application/json') ? JSON.parse(text) : { characters: [] };
+        const characters = Array.isArray(data.characters)
+            ? data.characters
+            : Array.isArray(data)
+                ? data
+                : [];
+
+        if (!Array.isArray(characters) || characters.length === 0) {
+            throw new Error('No characters found for this account. Ensure the profile is public.');
+        }
+
+        // Normalize to PoeCharacter
+        const result: PoeCharacter[] = characters.map((c: any) => ({
+            name: c.name,
+            class: c.class || 'Unknown',
+            level: typeof c.level === 'number' ? c.level : 0,
+        }));
+
+        logService.info("getAccountCharacters successful", { count: result.length });
+        return result;
     } catch (error) {
-        logService.error("Error in getAccountCharacters service call.", { 
-            error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error) 
+        logService.error("Error in getAccountCharacters service call.", {
+            error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error)
         });
         const errorMessage = error instanceof Error ? error.message : String(error);
         throw new Error(errorMessage);
