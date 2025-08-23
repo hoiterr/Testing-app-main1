@@ -1,76 +1,221 @@
-// Minimal Node environment declarations for serverless context without pulling full @types/node
-declare const process: any;
-import { GoogleGenAI } from "@google/genai";
-import { logService } from "../src/services/logService";
-import {
-  PoeAnalysisResult,
-  GroundingMetadata,
-  SimulationResult,
-  CraftingPlan,
-  FarmingStrategy,
-  MetagamePulseResult,
-  PreflightCheckResult,
-  AnalysisGoal,
-  LootFilter,
-  LevelingPlan,
-  TuningGoal,
-  TuningResult,
-  BossingStrategyGuide,
-  AIScores,
-  PoeApiBuildData,
-} from "../src/types";
+import { 
+  AnalysisGoal, 
+  PoeAnalysisResult, 
+  CraftingPlan, 
+  FarmingStrategy, 
+  MetagamePulseResult, 
+  BossingStrategyGuide, 
+  AIScores, 
+  TuningGoal, 
+  TuningResult, 
+  SimulationResult, 
+  LevelingPlan, 
+  PoeApiBuildData 
+} from '../types/pob.types';
+import { LootFilter } from '../types/ai.types';
+import { PreflightCheckResult } from "../types/poe.types";
 
-// Server-only: read key from environment
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
-if (!API_KEY) {
-  console.error("[api/geminiService] Missing GEMINI_API_KEY/API_KEY in environment.");
+// Type for grounding metadata from AI response
+interface GroundingItem {
+  uri: string;
+  title: string;
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Add type declaration for captureStackTrace
+declare global {
+  interface ErrorConstructor {
+    captureStackTrace(targetObject: object, constructorOpt?: Function): void;
+  }
+}
 
-const safeJsonParse = <T>(text: string): T => {
+// Note: Using require to avoid TypeScript module resolution issues
+// with the Google GenAI SDK
+const { GoogleGenAI } = require('@google/generative-ai');
+import { logService } from "../src/services/logService";
+import { ValidationError, BadRequestError } from "../src/errors/apiErrors";
+
+/**
+ * Custom error for JSON parsing failures
+ */
+class JsonParseError extends BadRequestError {
+  constructor(
+    message: string,
+    public readonly originalError?: unknown,
+    public readonly context: Record<string, unknown> = {}
+  ) {
+    super(message, { ...context, originalError: originalError?.toString() });
+    this.name = 'JsonParseError';
+  }
+}
+
+/**
+ * Validates that a value is defined and not empty
+ */
+function validateRequired<T>(value: T | undefined | null, field: string): T {
+  if (value === undefined || value === null || value === '') {
+    throw new ValidationError(
+      'Validation failed',
+      { [field]: ['This field is required'] },
+      { field, value: String(value) }
+    );
+  }
+  return value;
+}
+
+// Type guard for runtime type checking
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+// Initialize Google GenAI client
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+const ai = genAI; // Alias for backward compatibility
+
+// Configure the model
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.5-flash",
+  generationConfig: {
+    temperature: 0.7,
+    topP: 1,
+    topK: 32,
+    maxOutputTokens: 4096,
+  },
+  safetySettings: [
+    {
+      category: "HARM_CATEGORY_HARASSMENT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_HATE_SPEECH",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+  ],
+});
+
+/**
+ * Safely parses JSON with detailed error handling
+ */
+function safeJsonParse<T = unknown>(
+  jsonString: string,
+  context: Record<string, unknown> = {}
+): T {
   try {
-    const jsonStartIndex = text.indexOf("{");
-    const jsonEndIndex = text.lastIndexOf("}");
-    if (jsonStartIndex === -1 || jsonEndIndex === -1 || jsonEndIndex < jsonStartIndex) {
-      const arrayStartIndex = text.indexOf("[");
-      const arrayEndIndex = text.lastIndexOf("]");
-      if (arrayStartIndex !== -1 && arrayEndIndex !== -1 && arrayEndIndex > arrayStartIndex) {
-        const arrayString = text.substring(arrayStartIndex, arrayEndIndex + 1);
-        return JSON.parse(arrayString) as T;
-      }
-      logService.error("Failed to find JSON object or array in AI response.", { text });
-      throw new Error("Failed to find a valid JSON object or array in the AI response.");
-    }
-    const jsonString = text.substring(jsonStartIndex, jsonEndIndex + 1);
     return JSON.parse(jsonString) as T;
-  } catch (parseError) {
-    logService.error("Failed to parse extracted JSON.", { text, error: parseError });
-    throw new Error("Failed to parse the JSON object from the AI response even after extraction.");
+  } catch (error) {
+    throw new JsonParseError(
+      'Failed to parse JSON response',
+      error,
+      { jsonString, ...context }
+    );
+  }
+}
+
+/**
+ * Performs a preflight check on the provided PoB data
+ */
+export const preflightCheckPob = async (
+  pobData: unknown
+): Promise<PreflightCheckResult> => {
+  const context = { function: 'preflightCheckPob' };
+
+  // Input validation
+  try {
+    // Validate input is provided and is a non-empty string
+    const validatedPobData = validateRequired(pobData, 'pobData');
+    if (!isString(validatedPobData) || validatedPobData.trim().length === 0) {
+      throw new ValidationError(
+        'pobData must be a non-empty string',
+        { pobData: ['must be a non-empty string'] },
+        { field: 'pobData', value: String(validatedPobData) }
+      );
+    }
+
+    logService.info('Starting PoB preflight check', { context });
+
+    const prompt = `
+      You are an expert Path of Exile build analyzer. 
+      Your task is to perform a preflight check on the provided Path of Building (PoB) data.
+      
+      Analyze the following PoB data and return a JSON object with the following structure:
+      {
+        "characterClass": "string (e.g., Witch, Duelist, etc.)",
+        "ascendancy": "string (e.g., Elementalist, Slayer, etc.)",
+        "mainSkill": "string (primary skill gem name)",
+        "level": number (character level)
+      }
+      
+      PoB Data:
+      ${validatedPobData}
+    `;
+
+    const response = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+
+    const responseText = response.response.text();
+    logService.debug('Received response from Gemini API', { 
+      context,
+      response: responseText 
+    });
+
+    const result = safeJsonParse<PreflightCheckResult>(responseText, { context });
+    
+    // Validate the response structure
+    if (!result.characterClass || !result.ascendancy || !result.mainSkill || !result.level) {
+      throw new ValidationError(
+        'Invalid response structure from AI',
+        'response',
+        result
+      );
+    }
+
+    logService.info('Successfully completed PoB preflight check', { 
+      context,
+      result 
+    });
+
+    return result;
+  } catch (error) {
+    // Log the error with proper type checking
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    logService.error('Error in preflightCheckPob', { 
+      error: errorMessage,
+      stack: errorStack,
+      context
+    });
+    
+    // Re-throw known error types
+    if (error instanceof ValidationError || error instanceof JsonParseError) {
+      throw error;
+    }
+    
+    // Wrap unknown errors in a BadRequestError
+    throw new BadRequestError(
+      'Failed to process PoB data',
+      { 
+        ...context,
+        originalError: errorMessage,
+        stack: errorStack
+      }
+    );
   }
 };
 
-export const preflightCheckPob = async (pobData: string): Promise<PreflightCheckResult> => {
-  logService.info("preflightCheckPob started");
-  const prompt = `
-        You are an extremely fast Path of Building data parser. Your only goal is to identify the character's core identity from the raw PoB XML data.
-        Do not perform any analysis.
-        You MUST respond ONLY with a single, valid JSON object. Do not include any text, markdown, or commentary before or after it.
-
-        The JSON structure MUST be as follows:
-        {
-          "characterClass": "string",
-          "ascendancy": "string",
-          "mainSkill": "string (The primary damage skill used)",
-          "level": "number"
-        }
-
-        --- RAW PoB XML DATA ---
-        ${pobData}
-        ---
-    `;
-  try {
-    const response = await ai.models.generateContent({
+try {
+  const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
@@ -87,11 +232,52 @@ export const preflightCheckPob = async (pobData: string): Promise<PreflightCheck
 };
 
 export const analyzePob = async (
-  pobData: string,
-  pobUrl: string,
-  leagueContext: string,
-  analysisGoal: AnalysisGoal
+  pobData: unknown,
+  pobUrl: string = '',
+  leagueContext: string = 'Standard',
+  analysisGoal: AnalysisGoal = 'All-Rounder'
 ): Promise<PoeAnalysisResult> => {
+  // Input validation
+  try {
+    const validatedPobData = validateRequired(pobData, 'pobData');
+    if (!isString(validatedPobData) || validatedPobData.trim().length === 0) {
+      throw new ValidationError(
+      'pobData must be a non-empty string',
+      { pobData: ['must be a non-empty string'] },
+      { field: 'pobData', value: String(pobData) }
+    );
+    }
+    
+    if (pobUrl && !isString(pobUrl)) {
+      throw new ValidationError(
+        'pobUrl must be a string',
+        { pobUrl: ['must be a string'] },
+        { field: 'pobUrl', value: String(pobUrl) }
+      );
+    }
+    
+    if (!isString(leagueContext) || leagueContext.trim().length === 0) {
+      throw new ValidationError(
+        'leagueContext must be a non-empty string',
+        { leagueContext: ['must be a non-empty string'] },
+        { field: 'leagueContext', value: String(leagueContext) }
+      );
+    }
+    
+    const validAnalysisGoals: AnalysisGoal[] = ['All-Rounder', 'Mapping', 'Bossing', 'League Starter', 'Endgame', 'Hardcore', 'SSF'];
+    if (!validAnalysisGoals.includes(analysisGoal as AnalysisGoal)) {
+      throw new ValidationError(
+        `Invalid analysisGoal. Must be one of: ${validAnalysisGoals.join(', ')}`,
+        { analysisGoal: [analysisGoal] },
+        { validOptions: validAnalysisGoals }
+      );
+    }  
+  } catch (error) {
+    logService.error('Validation failed in analyzePob', { 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    throw error;
+  }
   logService.info("analyzePob started", { leagueContext, pobUrl, analysisGoal });
   const prompt = `
         You are a world-class expert on the video game Path of Exile. You have deep knowledge of all game mechanics, items, skills, and the current meta.
@@ -152,79 +338,60 @@ export const analyzePob = async (
         ---
     `;
 
-  try {
-    logService.debug("Sending prompt to Gemini API for analysis.");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { tools: [{ googleSearch: {} }] },
-    });
+    try {
+      logService.debug("Sending prompt to Gemini API for analysis.");
+      const response = await model.generateContent({
+        contents: prompt,
+        config: { tools: [{ googleSearch: {} }] },
+      });
 
-    const rawText = response.text?.trim() ?? "";
-    logService.debug("Received raw response from Gemini API.", { rawText });
+      const rawText = response.text?.trim() || "";
+      logService.debug("Received response from Gemini API", { responseLength: rawText.length });
 
-    const analysis = safeJsonParse<PoeAnalysisResult>(rawText);
+      // Parse the response
+      const analysis = safeJsonParse<PoeAnalysisResult>(rawText, { functionName: 'analyzePob' });
 
-    const groundingChunks: any[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-    const groundingMetadata: GroundingMetadata[] = groundingChunks
-      .map((chunk: any) => chunk.web)
-      .filter((web: any): web is { uri: string; title: string } => !!web?.uri && !!web.title)
-      .map((web: any) => ({ uri: web.uri, title: web.title.trim() }));
+      // Process grounding metadata if available
+      if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+        const groundingMetadata = (response.candidates[0].groundingMetadata.groundingChunks as Array<{uri?: string, title?: string}> || [])
+          .filter((web): web is {uri: string, title: string} => 
+            !!web?.uri && !!web.title && typeof web.uri === 'string' && typeof web.title === 'string'
+          )
+          .map((web) => ({
+            uri: web.uri,
+            title: web.title.trim()
+          }));
 
-    const uniqueMetadata = Array.from(new Map(groundingMetadata.map((item) => [item.uri, item])).values());
-    analysis.groundingMetadata = uniqueMetadata;
-
-    logService.info("analyzePob completed successfully.");
-    return analysis;
-  } catch (error) {
-    logService.error("Error in analyzePob service call.", { error });
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to get a valid analysis from the AI service. Details: ${errorMessage}`);
-  }
-};
-
-export const findUpgrade = async (
-  pobData: string,
-  slot: string,
-  budget: string,
-  leagueContext: string
-): Promise<{ tradeUrl: string; explanation: string }> => {
-  logService.info("findUpgrade started", { slot, budget, leagueContext });
-  const prompt = `
-        You are a Path of Exile trade expert. Your goal is to generate a valid URL for the official trade website (pathofexile.com/trade) to help a user find an upgrade.
+        const uniqueMetadata = Array.from(
+          new Map(groundingMetadata.map(item => [item.uri, item])).values()
+        );
         
-        Analyze the user's build data provided below.
-        Identify the most impactful explicit modifiers for the "${slot}" slot that are missing or could be improved.
-        Construct a trade search URL that looks for these modifiers.
-        The search should be realistic for a budget of approximately "${budget}" in the "${leagueContext}" league context. Use your knowledge and Google Search to estimate current market values to set reasonable stat filters.
-        
-        You MUST respond ONLY with a single, valid JSON object. No other text or markdown.
-        The JSON structure must be:
-        {
-          "tradeUrl": "string",
-          "explanation": "string (A short explanation of what this search is looking for and why it's a good upgrade.)"
-        }
+        analysis.groundingMetadata = uniqueMetadata;
+      }
 
-        --- Build Data ---
-        ${pobData}
-        ---
-    `;
-  try {
-    logService.debug("Sending prompt to Gemini for upgrade finder.");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" },
+      logService.info("analyzePob completed successfully.");
+      return analysis;
+    } catch (error) {
+      logService.error("Error in analyzePob service call.", { error });
+      throw error;
+    }
     });
     const rawText = response.text?.trim() ?? "";
     logService.debug("Received raw response from Gemini for upgrade finder.", { rawText });
-    const result = safeJsonParse<{ tradeUrl: string; explanation: string }>(rawText);
+    
+    try {
+      const result = safeJsonParse<{ tradeUrl: string; explanation: string }>(rawText);
 
-    if (!result.tradeUrl || !result.tradeUrl.includes("pathofexile.com/trade")) {
-      throw new Error("AI did not generate a valid trade URL.");
+      if (!result?.tradeUrl || !result.tradeUrl.includes("pathofexile.com/trade")) {
+        throw new Error("AI did not generate a valid trade URL.");
+      }
+      
+      logService.info("findUpgrade completed successfully.");
+      return result;
+    } catch (error) {
+      logService.error("Failed to parse findUpgrade response", { error, rawText });
+      throw new Error("Failed to process upgrade finder response");
     }
-    logService.info("findUpgrade completed successfully.");
-    return result;
   } catch (error) {
     logService.error("Error in findUpgrade service call.", { error });
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -252,13 +419,13 @@ export const generateLootFilter = async (
         - Emphasizes items with combinations of important modifiers.
         - Hides general "clutter" items not relevant to the build.
         
-        You MUST respond ONLY with a single, valid JSON object. Do not include any text before or after it.
-        The JSON structure must be:
+        You MUST respond ONLY with a single, valid JSON object. Do not include any text before or after the JSON object.
+        The JSON object must follow this exact structure:
         {
           "script": "string (The full loot filter script, with comments explaining key sections.)",
           "notes": "string (A brief summary of what this filter is customized to do for the user's build.)"
         }
-
+        
         --- Build Analysis JSON ---
         ${JSON.stringify(analysis, null, 2)}
         ---
