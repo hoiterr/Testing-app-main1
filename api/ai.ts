@@ -589,5 +589,3 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     clearTimeout(requestTimeout);
   }
 }
-
-// ... rest of the code remains the same ...

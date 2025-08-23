@@ -225,7 +225,7 @@ export const preflightCheckPob = async (
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to get a valid pre-flight check from the AI. Details: ${errorMessage}`);
   }
-};
+}
 
 export const analyzePob = async (
   pobData: unknown,
