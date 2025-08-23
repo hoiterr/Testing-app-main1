@@ -1,5 +1,4 @@
 
-
 import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy, MetagamePulseResult } from '@/types';
 import * as poeApi from './poeApi';
 
@@ -10,9 +9,26 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
     const resp = await fetch(`/api/poe?${params.toString()}`, {
         headers: poeCookie ? { 'x-poe-cookie': poeCookie } : undefined,
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Failed to fetch characters');
-    return data.characters as PoeCharacter[];
+    // Read raw text once, then branch
+    const raw = await resp.text();
+    if (!resp.ok) {
+        // Try JSON first
+        try {
+            const maybe = JSON.parse(raw);
+            const msg = (maybe && (maybe.error || maybe.message)) || raw || `HTTP ${resp.status} ${resp.statusText}`;
+            throw new Error(msg);
+        } catch {
+            const fallback = raw || `HTTP ${resp.status} ${resp.statusText}`;
+            throw new Error(fallback);
+        }
+    }
+    try {
+        const json = JSON.parse(raw);
+        const characters = Array.isArray(json?.characters) ? json.characters : (Array.isArray(json) ? json : []);
+        return characters as PoeCharacter[];
+    } catch {
+        throw new Error('Unexpected response format from /api/poe.');
+    }
 };
 
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.

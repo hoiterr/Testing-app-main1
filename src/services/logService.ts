@@ -1,4 +1,3 @@
-
 export type LogLevel = 'INFO' | 'ERROR' | 'DEBUG';
 
 export interface LogEntry {
@@ -20,12 +19,27 @@ class LogService {
     private isVisible = false;
 
     private addLog(level: LogLevel, message: string, payload?: any) {
+        const normalize = (val: any, depth = 0): any => {
+            if (val == null) return val;
+            if (val instanceof Error) {
+                return { name: val.name, message: val.message, stack: val.stack };
+            }
+            if (typeof val === 'object') {
+                if (depth > 2) return '[Object]';
+                const out: any = Array.isArray(val) ? [] : {};
+                for (const k of Object.keys(val)) {
+                    out[k] = normalize((val as any)[k], depth + 1);
+                }
+                return out;
+            }
+            return val;
+        };
         const newLog: LogEntry = {
             id: this.nextId++,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
             level,
             message,
-            payload,
+            payload: normalize(payload),
         };
         this.logs = [...this.logs, newLog].slice(-100); // Keep last 100 logs
         this.notifyListeners();
