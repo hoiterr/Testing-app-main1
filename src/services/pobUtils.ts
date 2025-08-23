@@ -1,4 +1,3 @@
-
 import * as pako from 'pako';
 import { logService } from './logService';
 
@@ -23,7 +22,10 @@ export const isPobCode = (data: string): boolean => {
  */
 export const decodePobCode = (code: string): string => {
     try {
-        logService.debug("Decoding PoB code...");
+        logService.debug("Decoding PoB code...", {
+            len: code?.length ?? 0,
+            startsWith: code?.slice(0, 4) ?? ''
+        });
 
         // 1. Sanitize the code by removing all whitespace.
         const sanitizedCode = code.replace(/\s/g, '');
@@ -36,19 +38,42 @@ export const decodePobCode = (code: string): string => {
             base64String += '=';
         }
         
-        // 4. Decode from Base64 to a binary string.
+        // 4. Decode from Base64 to a binary string, then to Uint8Array.
         const decodedData = atob(base64String);
+        const charData = new Uint8Array(decodedData.length);
+        for (let i = 0; i < decodedData.length; i++) charData[i] = decodedData.charCodeAt(i);
 
-        // 5. Decompress the binary string using pako (zlib inflate).
-        // The result is a Uint8Array.
-        const charData = decodedData.split('').map(x => x.charCodeAt(0));
-        const binData = new Uint8Array(charData);
-        const inflated = pako.inflate(binData, { to: 'string' });
+        // 5. Try multiple inflate strategies (zlib default, windowBits variants, and raw) to be robust.
+        const tryInflate = (): string => {
+            const attempts: Array<() => string> = [
+                () => pako.inflate(charData, { to: 'string' }) as string,
+                () => pako.inflate(charData, { to: 'string', windowBits: 15 }) as string,
+                () => pako.inflate(charData, { to: 'string', windowBits: 31 }) as string, // gzip/zlib autodetect
+                () => pako.inflateRaw(charData, { to: 'string' }) as string,
+            ];
+            const errors: any[] = [];
+            for (const attempt of attempts) {
+                try {
+                    return attempt();
+                } catch (err) {
+                    errors.push(err);
+                }
+            }
+            // If all attempts failed, throw combined error
+            throw new Error(`Inflate failed with ${errors.length} strategies.`);
+        };
+
+        const inflated = tryInflate();
 
         logService.debug("PoB code decoded successfully.");
         return inflated;
     } catch (e) {
-        logService.error("Failed to decode PoB code.", { code, error: e });
+        // Do not log full code; include minimal diagnostics only
+        logService.error("Failed to decode PoB code.", {
+            len: code?.length ?? 0,
+            startsWith: code?.slice(0, 4) ?? '',
+            error: e
+        });
         throw new Error("Invalid or corrupted Path of Building code. Please ensure you copied the entire code correctly.");
     }
 };
