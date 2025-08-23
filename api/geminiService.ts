@@ -1,17 +1,16 @@
 import { 
   AnalysisGoal, 
-  PoeAnalysisResult, 
   CraftingPlan, 
   FarmingStrategy, 
   MetagamePulseResult, 
   BossingStrategyGuide, 
   AIScores, 
-  TuningGoal, 
   TuningResult, 
   SimulationResult, 
   LevelingPlan, 
   PoeApiBuildData 
 } from '../types/pob.types';
+import type { PoeAnalysisResult as UIPoeAnalysisResult, TuningGoal as UITuningGoal } from '../src/types';
 import { LootFilter } from '../types/ai.types';
 import { PreflightCheckResult } from '../types/poe.types';
 
@@ -170,8 +169,8 @@ export const preflightCheckPob = async (
     if (!result.characterClass || !result.ascendancy || !result.mainSkill || !result.level) {
       throw new ValidationError(
         'Invalid response structure from AI',
-        'response',
-        result
+        { response: ['missing required fields'] },
+        result as unknown as Record<string, unknown>
       );
     }
 
@@ -209,30 +208,13 @@ export const preflightCheckPob = async (
   }
 };
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
-    });
-    
-    const rawText = response.text?.trim() ?? "";
-    const result = safeJsonParse<PreflightCheckResult>(rawText, { functionName: 'preflightCheckPob' });
-    logService.info("preflightCheckPob completed successfully.");
-    return result;
-  } catch (error) {
-    logService.error("Error in preflightCheckPob service call.", { error });
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to get a valid pre-flight check from the AI. Details: ${errorMessage}`);
-  }
-}
 
 export const analyzePob = async (
   pobData: unknown,
   pobUrl: string = '',
   leagueContext: string = 'Standard',
   analysisGoal: AnalysisGoal = 'All-Rounder'
-): Promise<PoeAnalysisResult> => {
+): Promise<UIPoeAnalysisResult> => {
   // Input validation
   try {
     const validatedPobData = validateRequired(pobData, 'pobData');
@@ -345,7 +327,7 @@ export const analyzePob = async (
       logService.debug("Received response from Gemini API", { responseLength: rawText.length });
 
       // Parse the response
-      const analysis = safeJsonParse<PoeAnalysisResult>(rawText, { functionName: 'analyzePob' });
+      const analysis = safeJsonParse<UIPoeAnalysisResult>(rawText, { functionName: 'analyzePob' });
 
       // Process grounding metadata if available
       if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
@@ -374,7 +356,7 @@ export const analyzePob = async (
 };
 
 export const generateLootFilter = async (
-  analysis: PoeAnalysisResult,
+  analysis: UIPoeAnalysisResult,
   leagueContext: string
 ): Promise<LootFilter> => {
   logService.info("generateLootFilter started", { leagueContext });
@@ -612,8 +594,8 @@ export const getMetagamePulse = async (leagueContext: string): Promise<MetagameP
 };
 
 export const compareAnalyses = async (
-  analysisA: PoeAnalysisResult,
-  analysisB: PoeAnalysisResult
+  analysisA: UIPoeAnalysisResult,
+  analysisB: UIPoeAnalysisResult
 ): Promise<string> => {
   logService.info("compareAnalyses started");
   const prompt = `
@@ -653,7 +635,7 @@ export const compareAnalyses = async (
   }
 };
 
-export const createChat = (analysisResult: PoeAnalysisResult): any => {
+export const createChat = (analysisResult: UIPoeAnalysisResult): any => {
   logService.info("Creating new chat session.");
   const systemInstruction = `
 You are a world-class Path of Exile expert continuing a conversation with a player about their build.
@@ -677,7 +659,7 @@ ${JSON.stringify(analysisResult, null, 2)}
   return chat;
 };
 
-export const generateBuildGuide = async (analysis: PoeAnalysisResult): Promise<string> => {
+export const generateBuildGuide = async (analysis: UIPoeAnalysisResult): Promise<string> => {
   logService.info("generateBuildGuide started");
   const prompt = `
         You are an expert Path of Exile player and content creator, known for writing clear and helpful build guides.
@@ -761,8 +743,8 @@ export const generateLevelingPlan = async (
 };
 
 export const tuneBuildForContent = async (
-  analysis: PoeAnalysisResult,
-  goal: TuningGoal,
+  analysis: UIPoeAnalysisResult,
+  goal: UITuningGoal,
   leagueContext: string
 ): Promise<TuningResult> => {
   logService.info("tuneBuildForContent started", { goal, leagueContext });
@@ -806,7 +788,7 @@ export const tuneBuildForContent = async (
 };
 
 export const generateBossingStrategy = async (
-  analysis: PoeAnalysisResult
+  analysis: UIPoeAnalysisResult
 ): Promise<BossingStrategyGuide[]> => {
   logService.info("generateBossingStrategy started");
   const prompt = `
@@ -841,7 +823,7 @@ export const generateBossingStrategy = async (
   }
 };
 
-export const scoreBuildForLibrary = async (analysis: PoeAnalysisResult): Promise<AIScores> => {
+export const scoreBuildForLibrary = async (analysis: UIPoeAnalysisResult): Promise<AIScores> => {
   logService.info("scoreBuildForLibrary started");
   const prompt = `
         You are a Path of Exile build evaluator. Your task is to score a build based on its analysis across three categories: Meta Viability, Budget Efficiency, and Optimization Score.

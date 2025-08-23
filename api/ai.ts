@@ -47,7 +47,6 @@ type ApiRequest = IncomingMessage & {
 import { 
   analyzePob, 
   preflightCheckPob, 
-  findUpgrade, 
   generateLootFilter, 
   runSimulation, 
   generateCraftingPlan, 
@@ -326,12 +325,6 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       });
     }
 
-    // Set up request timeout with AbortController
-    const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 29000); // 29 seconds (Vercel has a 30s timeout)
-
     try {
     // Validate content type
     const contentType = request.headers['content-type'];
@@ -398,12 +391,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           resultData = await preflightCheckPob(data.pobData);
           break;
           
-        case 'findUpgrade': {
-          const { pobData, slot, budget, leagueContext } = data;
-          if (!pobData || !slot) throw new ApiError('pobData and slot are required', 400);
-          resultData = await findUpgrade(pobData, slot, String(budget || 0), leagueContext || 'Standard');
-          break;
-        }
+        
           
         case 'generateLootFilter': {
           if (!data.analysis || typeof data.analysis !== 'object') {
@@ -413,7 +401,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           if (!isPoeAnalysisResult(data.analysis)) {
             throw new ApiError('Invalid analysis data format', 400);
           }
-          const analysis = data.analysis;
+          const analysis = data.analysis as PoeAnalysisResult;
           resultData = await generateLootFilter(analysis, data.leagueContext || 'Standard');
           break;
         }
@@ -452,8 +440,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           if (!isPoeAnalysisResult(data.analysisA) || !isPoeAnalysisResult(data.analysisB)) {
             throw new ApiError('Invalid analysis data format', 400);
           }
-          const analysisA = data.analysisA;
-          const analysisB = data.analysisB;
+          const analysisA = data.analysisA as PoeAnalysisResult;
+          const analysisB = data.analysisB as PoeAnalysisResult;
           resultData = await compareAnalyses(analysisA, analysisB);
           break;
         }
@@ -466,7 +454,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           if (!isPoeAnalysisResult(data.analysis)) {
             throw new ApiError('Invalid analysis data format', 400);
           }
-          const analysis = data.analysis;
+          const analysis = data.analysis as PoeAnalysisResult;
           resultData = await generateBuildGuide(analysis);
           break;
         }
@@ -492,7 +480,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
             ? data.goal as TuningGoal
             : 'Simulacrum';
             
-          const analysis = data.analysis;
+          const analysis = data.analysis as PoeAnalysisResult;
           resultData = await tuneBuildForContent(
             analysis, 
             goal, 
@@ -509,7 +497,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           if (!isPoeAnalysisResult(data.analysis)) {
             throw new ApiError('Invalid analysis data format', 400);
           }
-          const analysis = data.analysis;
+          const analysis = data.analysis as PoeAnalysisResult;
           resultData = await generateBossingStrategy(analysis);
           break;
         }
@@ -522,7 +510,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
           if (!isPoeAnalysisResult(data.analysis)) {
             throw new ApiError('Invalid analysis data format', 400);
           }
-          const analysis = data.analysis;
+          const analysis = data.analysis as PoeAnalysisResult;
           resultData = await scoreBuildForLibrary(analysis);
           break;
         }
