@@ -325,7 +325,6 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       });
     }
 
-    try {
     // Validate content type
     const contentType = request.headers['content-type'];
     if (!contentType || !contentType.includes('application/json')) {
@@ -362,7 +361,6 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
     let resultData: unknown;
 
-    try {
       switch (action) {
         case 'analyzePob': {
           const { pobData, pobUrl, leagueContext, analysisGoal } = data;
@@ -539,29 +537,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       // If we get here, no action was matched
       throw new ApiError('No action specified or action not implemented', 400);
       
-    } catch (error: unknown) {
-      // Handle any errors that occur during request processing
-      if (error instanceof Error) {
-        if (error.name === 'AbortError' || /aborted|timeout/i.test(error.message)) {
-          return sendErrorResponse(response, new ApiError('Request timed out', 504));
-        }
-        
-        if (error instanceof ApiError) {
-          return sendErrorResponse(response, error);
-        }
-        
-        // Log unexpected errors with stack trace
-        logService.error('Unexpected error processing request', { 
-          message: error.message,
-          name: error.name,
-          stack: error.stack
-        });
-      } else {
-        logService.error('Unexpected non-Error thrown', { error: String(error) });
-      }
-      
-      return sendErrorResponse(response, new ApiError('Internal server error', 500));
-    }
+    
   } catch (error: unknown) {
     // Handle any errors in the outer try block
     if (error instanceof Error) {
