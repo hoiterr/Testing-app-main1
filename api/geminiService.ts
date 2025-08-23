@@ -13,13 +13,7 @@ import {
   PoeApiBuildData 
 } from '../types/pob.types';
 import { LootFilter } from '../types/ai.types';
-import { PreflightCheckResult } from "../types/poe.types";
-
-// Type for grounding metadata from AI response
-interface GroundingItem {
-  uri: string;
-  title: string;
-}
+import { PreflightCheckResult } from '../types/poe.types';
 
 // Add type declaration for captureStackTrace
 declare global {
@@ -108,7 +102,8 @@ function safeJsonParse<T = unknown>(
   context: Record<string, unknown> = {}
 ): T {
   try {
-    return JSON.parse(jsonString) as T;
+    const result = JSON.parse(jsonString);
+    return result as T;
   } catch (error) {
     throw new JsonParseError(
       'Failed to parse JSON response',
@@ -214,14 +209,15 @@ export const preflightCheckPob = async (
   }
 };
 
-try {
-  const response = await ai.models.generateContent({
+  try {
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
     });
+    
     const rawText = response.text?.trim() ?? "";
-    const result = safeJsonParse<PreflightCheckResult>(rawText);
+    const result = safeJsonParse<PreflightCheckResult>(rawText, { functionName: 'preflightCheckPob' });
     logService.info("preflightCheckPob completed successfully.");
     return result;
   } catch (error) {
@@ -375,28 +371,6 @@ export const analyzePob = async (
       logService.error("Error in analyzePob service call.", { error });
       throw error;
     }
-    });
-    const rawText = response.text?.trim() ?? "";
-    logService.debug("Received raw response from Gemini for upgrade finder.", { rawText });
-    
-    try {
-      const result = safeJsonParse<{ tradeUrl: string; explanation: string }>(rawText);
-
-      if (!result?.tradeUrl || !result.tradeUrl.includes("pathofexile.com/trade")) {
-        throw new Error("AI did not generate a valid trade URL.");
-      }
-      
-      logService.info("findUpgrade completed successfully.");
-      return result;
-    } catch (error) {
-      logService.error("Failed to parse findUpgrade response", { error, rawText });
-      throw new Error("Failed to process upgrade finder response");
-    }
-  } catch (error) {
-    logService.error("Error in findUpgrade service call.", { error });
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`AI trade search failed. Details: ${errorMessage}`);
-  }
 };
 
 export const generateLootFilter = async (
