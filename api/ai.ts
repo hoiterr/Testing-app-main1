@@ -60,14 +60,14 @@ import {
   scoreBuildForLibrary, 
   convertPoeJsonToPobXml
 } from './geminiService';
-import { logService } from '@/services/logService';
-import { apiRequestSchema } from '@/schemas/apiSchemas';
+import { logService } from './apiLog';
+import { apiRequestSchema } from './apiSchemas';
 import type { 
   PoeAnalysisResult, 
   PoeApiBuildData, 
   AnalysisGoal,
   TuningGoal 
-} from '../src/types';
+} from './apiTypes';
 
 // Type guard to check if an object is a valid PoeAnalysisResult
 function isPoeAnalysisResult(obj: unknown): obj is PoeAnalysisResult {

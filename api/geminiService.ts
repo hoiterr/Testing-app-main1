@@ -1,5 +1,4 @@
 import { 
-  AnalysisGoal, 
   CraftingPlan, 
   FarmingStrategy, 
   MetagamePulseResult, 
@@ -7,10 +6,9 @@ import {
   AIScores, 
   TuningResult, 
   SimulationResult, 
-  LevelingPlan, 
-  PoeApiBuildData 
+  LevelingPlan 
 } from '../types/pob.types';
-import type { PoeAnalysisResult as UIPoeAnalysisResult, TuningGoal as UITuningGoal } from '../src/types';
+import type { PoeAnalysisResult as UIPoeAnalysisResult, TuningGoal as UITuningGoal, AnalysisGoal, PoeApiBuildData } from './apiTypes';
 import { LootFilter } from '../types/ai.types';
 import { PreflightCheckResult } from '../types/poe.types';
 
@@ -24,8 +22,8 @@ declare global {
 // Note: Using require to avoid TypeScript module resolution issues
 // with the Google GenAI SDK
 const { GoogleGenAI } = require('@google/generative-ai');
-import { logService } from "../src/services/logService";
-import { ValidationError, BadRequestError } from "../src/errors/apiErrors";
+import { logService } from "./apiLog";
+import { ValidationError, BadRequestError } from "./apiErrors";
 
 /**
  * Custom error for JSON parsing failures
