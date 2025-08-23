@@ -22,12 +22,22 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
             throw new Error(fallback);
         }
     }
+    // Successful HTTP status but body might still be HTML/login page or malformed
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')) {
+        throw new Error('PoE returned HTML (likely a login or error page). Ensure the profile is public or set a valid POESESSID in Advanced.');
+    }
     try {
-        const json = JSON.parse(raw);
+        const json = JSON.parse(trimmed);
         const characters = Array.isArray(json?.characters) ? json.characters : (Array.isArray(json) ? json : []);
+        if (!Array.isArray(characters) || characters.length === 0) {
+            throw new Error('No characters found. Ensure the profile is public and the handle is correct.');
+        }
         return characters as PoeCharacter[];
-    } catch {
-        throw new Error('Unexpected response format from /api/poe.');
+    } catch (e) {
+        // Provide actionable diagnostics snippet
+        const sample = trimmed.slice(0, 200);
+        throw new Error(`Unexpected response from /api/poe. Tip: make your profile public or set POESESSID. Body starts with: ${sample}`);
     }
 };
 

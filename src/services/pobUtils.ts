@@ -27,12 +27,17 @@ export const decodePobCode = (code: string): string => {
             startsWith: code?.slice(0, 4) ?? ''
         });
 
-        // 1. Sanitize the code by removing all whitespace.
-        const sanitizedCode = code.replace(/\s/g, '');
-        
+        // 1. Sanitize the code by removing all whitespace and zero-width characters.
+        const sanitizedCode = code
+            .replace(/\s/g, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
         // 2. Replace URL-safe Base64 characters with standard ones.
         let base64String = sanitizedCode.replace(/-/g, '+').replace(/_/g, '/');
-        
+
+        // 2b. Remove any characters that are not valid in Base64 payloads (keep = for padding).
+        base64String = base64String.replace(/[^A-Za-z0-9+/=]/g, '');
+
         // 3. Add Base64 padding if necessary. The length must be a multiple of 4.
         while (base64String.length % 4) {
             base64String += '=';
