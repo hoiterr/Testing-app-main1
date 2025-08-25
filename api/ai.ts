@@ -235,6 +235,11 @@ export default async function handler(request: any, response: any) {
       return response.status(204).end();
     }
 
+    // Temporary diagnostic: allow GET to verify routing in production
+    if (request.method === 'GET') {
+      return response.status(200).json({ status: 'ok', method: 'GET', path: request.url || '/api/ai' });
+    }
+
     // Only allow POST requests
     if (request.method !== 'POST') {
       response.setHeader('Allow', 'POST, OPTIONS');
