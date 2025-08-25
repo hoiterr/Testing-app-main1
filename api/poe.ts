@@ -36,7 +36,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const handle = req.query.handle as string | undefined;
   const realm = (req.query.realm as string | undefined) || 'pc';
-  const poeCookie = (req.headers['x-poe-cookie'] as string | undefined) || '';
+  // Prefer secure HTTP-only cookie set by /api/poe-session; allow explicit header as fallback for advanced tooling
+  const cookieFromHeader = req.headers['x-poe-cookie'] as string | undefined;
+  const sessionCookie = (req as any).cookies?.POESESSID as string | undefined; // @vercel/node exposes cookies on req
+  const poeCookie = sessionCookie ? `POESESSID=${decodeURIComponent(sessionCookie)}` : (cookieFromHeader || '');
 
   if (!handle) return res.status(400).json({ error: 'Missing handle param (e.g., Hettii#6037)' });
 

@@ -15,6 +15,28 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
     return data.characters as PoeCharacter[];
 };
 
+// Securely set the POESESSID in an HTTP-only cookie on the server
+export const setPoeSession = async (poesessid: string): Promise<void> => {
+    const resp = await fetch('/api/poe-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poesessid }),
+    });
+    if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to set PoE session');
+    }
+};
+
+// Clear the stored POESESSID cookie
+export const clearPoeSession = async (): Promise<void> => {
+    const resp = await fetch('/api/poe-session', { method: 'DELETE' });
+    if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to clear PoE session');
+    }
+};
+
 // This is the CLIENT-SIDE entrypoint for Path of Exile API calls.
 export const fetchPobFromAccount = async (accountName: string, characterName: string): Promise<{ pobData: string; pobUrl: string; }> => {
     return poeApi.fetchPobFromAccount(accountName, characterName);
