@@ -15,3 +15,4 @@ declare module 'pako' {
 // Minimal Node globals to avoid requiring @types/node for serverless-only files
 // (Vercel provides process at runtime)
 declare var process: any;
+declare const Buffer: any;

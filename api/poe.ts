@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const rawHandle = req.query.handle as string | undefined;
   const realm = (req.query.realm as string | undefined) || 'pc';
-  const poeCookieRaw = (req.headers['x-poe-cookie'] as string | undefined) || '';
+  const poeCookieHeader = (req.headers['x-poe-cookie'] as string | undefined) || '';
 
   if (!rawHandle) return res.status(400).json({ error: 'Missing handle param (e.g., Hettii#6037)' });
   // Normalize handle: strip discriminator (e.g., '#6037') and trim
@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const headers: Record<string, string> = { ...DEFAULT_HEADERS };
-    const poeCookie = normalizePoeCookie(poeCookieRaw);
+    const poeCookie = normalizePoeCookie(poeCookieHeader);
     if (poeCookie) headers['Cookie'] = poeCookie;
 
     const cacheKey = `${handle}|${realm}`;

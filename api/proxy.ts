@@ -1,8 +1,7 @@
 // Vercel Serverless Function: /api/proxy.ts
 // This is our backend. It runs on Vercel's servers.
-import { logService } from './apiLog';
+import { logService } from '../src/services/logService';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Buffer } from 'buffer';
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
     const { targetUrl } = request.query;
@@ -41,7 +40,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         response.status(fetchResponse.status);
         // Stream raw body through (browser will handle decompression when header is present)
         const body = await fetchResponse.arrayBuffer();
-        response.send(Buffer.from(body));
+        response.end(Buffer.from(body));
 
     } catch (error: any) {
         logService.error(`[Vercel Proxy] Failed to fetch target URL: ${targetUrl}`, { error });
