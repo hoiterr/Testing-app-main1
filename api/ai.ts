@@ -1,49 +1,5 @@
 // Vercel Serverless Function: /api/ai.ts
 // This is our secure backend endpoint for all Gemini AI operations.
-
-import { IncomingMessage, ServerResponse } from 'http';
-
-// Custom response class that implements our required methods
-class ApiResponse extends ServerResponse {
-  statusCode: number = 200;
-  
-  status(code: number): this {
-    this.statusCode = code;
-    return this;
-  }
-  
-  json(body: any): void {
-    this.setHeader('Content-Type', 'application/json');
-    this.end(JSON.stringify(body));
-  }
-  
-  send(body: any): void {
-    if (typeof body === 'object') {
-      this.json(body);
-    } else {
-      this.end(body);
-    }
-  }
-  
-  redirect(url: string): void {
-    this.writeHead(302, { Location: url });
-    this.end();
-  }
-}
-
-// Request type
-type ApiRequest = IncomingMessage & {
-  body: any;
-  method?: string;
-  query: {
-    [key: string]: string | string[] | undefined;
-  };
-  cookies: {
-    [key: string]: string;
-  };
-  headers: NodeJS.Dict<string | string[]>;
-  socket: any;
-};
 import { 
   analyzePob, 
   preflightCheckPob, 
@@ -227,7 +183,7 @@ class ApiError extends Error {
 }
 
 // Helper function to send error responses
-function sendErrorResponse(res: ApiResponse, error: Error | ApiError) {
+function sendErrorResponse(res: any, error: Error | ApiError) {
     const statusCode = error instanceof ApiError ? error.statusCode : 500;
     const message = error.message || 'Internal server error';
     
@@ -255,13 +211,18 @@ function sendErrorResponse(res: ApiResponse, error: Error | ApiError) {
 }
 
 // Main API handler
-export default async function handler(request: ApiRequest, response: ApiResponse) {
+export default async function handler(request: any, response: any) {
   // Initialize request timeout
   const requestTimeout = setTimeout(() => {
     logService.error('Request timed out');
   }, 29000); // 29 seconds (Vercel has a 30s timeout)
 
   try {
+    // Basic CORS headers for both preflight and main requests (same-origin safe)
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     // Set security headers
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('X-Frame-Options', 'DENY');
@@ -271,14 +232,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-      response.setHeader('Access-Control-Allow-Origin', '*');
-      response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return response.status(204).end();
     }
 
     // Only allow POST requests
     if (request.method !== 'POST') {
+      response.setHeader('Allow', 'POST, OPTIONS');
       return response.status(405).json({ 
         error: 'Method not allowed',
         allowedMethods: ['POST']
@@ -288,13 +247,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     // Signal is available via controller.signal for any async operations
 
     // Get client IP with proper header handling
-    const clientIp = (
-      (Array.isArray(request.headers['x-forwarded-for']) 
-        ? request.headers['x-forwarded-for'][0] 
-        : request.headers['x-forwarded-for']) || 
-      request.socket.remoteAddress ||
-      'unknown'
-    ).split(',')[0].trim();
+    const xff = request.headers && request.headers['x-forwarded-for'];
+    const fwd = Array.isArray(xff) ? xff[0] : xff;
+    const clientIp = (fwd || (request.socket && request.socket.remoteAddress) || 'unknown')
+      .toString()
+      .split(',')[0]
+      .trim();
 
     // Check rate limit
     const endpoint = request.url?.split('?')[0] || '/api/ai';
@@ -326,7 +284,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
 
     // Validate content type
-    const contentType = request.headers['content-type'];
+    const contentType = request.headers ? (request.headers['content-type'] as string | undefined) : undefined;
     if (!contentType || !contentType.includes('application/json')) {
       throw new ApiError('Content type must be application/json', 415);
     }
