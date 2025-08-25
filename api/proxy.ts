@@ -1,6 +1,6 @@
 // Vercel Serverless Function: /api/proxy.ts
 // This is our backend. It runs on Vercel's servers.
-import { logService } from '../src/services/logService';
+import { logService } from './apiLog';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Buffer } from 'buffer';
 

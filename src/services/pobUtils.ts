@@ -1,4 +1,3 @@
-
 import * as pako from 'pako';
 import { logService } from './logService';
 
@@ -23,32 +22,63 @@ export const isPobCode = (data: string): boolean => {
  */
 export const decodePobCode = (code: string): string => {
     try {
-        logService.debug("Decoding PoB code...");
+        logService.debug("Decoding PoB code...", {
+            len: code?.length ?? 0,
+            startsWith: code?.slice(0, 4) ?? ''
+        });
 
-        // 1. Sanitize the code by removing all whitespace.
-        const sanitizedCode = code.replace(/\s/g, '');
-        
+        // 1. Sanitize the code by removing all whitespace and zero-width characters.
+        const sanitizedCode = code
+            .replace(/\s/g, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
         // 2. Replace URL-safe Base64 characters with standard ones.
         let base64String = sanitizedCode.replace(/-/g, '+').replace(/_/g, '/');
-        
+
+        // 2b. Remove any characters that are not valid in Base64 payloads (keep = for padding).
+        base64String = base64String.replace(/[^A-Za-z0-9+/=]/g, '');
+
         // 3. Add Base64 padding if necessary. The length must be a multiple of 4.
         while (base64String.length % 4) {
             base64String += '=';
         }
         
-        // 4. Decode from Base64 to a binary string.
+        // 4. Decode from Base64 to a binary string, then to Uint8Array.
         const decodedData = atob(base64String);
+        const charData = new Uint8Array(decodedData.length);
+        for (let i = 0; i < decodedData.length; i++) charData[i] = decodedData.charCodeAt(i);
 
-        // 5. Decompress the binary string using pako (zlib inflate).
-        // The result is a Uint8Array.
-        const charData = decodedData.split('').map(x => x.charCodeAt(0));
-        const binData = new Uint8Array(charData);
-        const inflated = pako.inflate(binData, { to: 'string' });
+        // 5. Try multiple inflate strategies (zlib default, windowBits variants, and raw) to be robust.
+        const tryInflate = (): string => {
+            const attempts: Array<() => string> = [
+                () => pako.inflate(charData, { to: 'string' }) as string,
+                () => pako.inflate(charData, { to: 'string', windowBits: 15 }) as string,
+                () => pako.inflate(charData, { to: 'string', windowBits: 31 }) as string, // gzip/zlib autodetect
+                () => pako.inflateRaw(charData, { to: 'string' }) as string,
+            ];
+            const errors: any[] = [];
+            for (const attempt of attempts) {
+                try {
+                    return attempt();
+                } catch (err) {
+                    errors.push(err);
+                }
+            }
+            // If all attempts failed, throw combined error
+            throw new Error(`Inflate failed with ${errors.length} strategies.`);
+        };
+
+        const inflated = tryInflate();
 
         logService.debug("PoB code decoded successfully.");
         return inflated;
     } catch (e) {
-        logService.error("Failed to decode PoB code.", { code, error: e });
+        // Do not log full code; include minimal diagnostics only
+        logService.error("Failed to decode PoB code.", {
+            len: code?.length ?? 0,
+            startsWith: code?.slice(0, 4) ?? '',
+            error: e
+        });
         throw new Error("Invalid or corrupted Path of Building code. Please ensure you copied the entire code correctly.");
     }
 };

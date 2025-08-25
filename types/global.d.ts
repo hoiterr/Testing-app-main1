@@ -19,7 +19,12 @@ declare module '@vercel/node' {
 
 // Browser-safe lib used in src/:
 declare module 'pako' {
-  export function inflate(input: Uint8Array): Uint8Array;
+  export interface InflateOptions {
+    to?: 'string';
+    windowBits?: number; // allow switching between zlib/gzip/raw
+  }
+  export function inflate(input: Uint8Array, options?: InflateOptions): Uint8Array | string;
+  export function inflateRaw(input: Uint8Array, options?: InflateOptions): Uint8Array | string;
 }
 
 // Minimal Node globals to avoid requiring @types/node for serverless-only files

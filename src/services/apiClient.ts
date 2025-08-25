@@ -1,5 +1,4 @@
 
-
 import { PoeAnalysisResult, PoeCharacter, AnalysisGoal, LeagueContext, LootFilter, LevelingPlan, TuningGoal, PublicBuild, TuningResult, SimulationResult, BossingStrategyGuide, AIScores, PreflightCheckResult, CraftingPlan, FarmingStrategy, MetagamePulseResult } from '@/types';
 import * as poeApi from './poeApi';
 
@@ -10,9 +9,36 @@ export const getAccountCharacters = async (accountName: string, poeCookie?: stri
     const resp = await fetch(`/api/poe?${params.toString()}`, {
         headers: poeCookie ? { 'x-poe-cookie': poeCookie } : undefined,
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Failed to fetch characters');
-    return data.characters as PoeCharacter[];
+    // Read raw text once, then branch
+    const raw = await resp.text();
+    if (!resp.ok) {
+        // Try JSON first
+        try {
+            const maybe = JSON.parse(raw);
+            const msg = (maybe && (maybe.error || maybe.message)) || raw || `HTTP ${resp.status} ${resp.statusText}`;
+            throw new Error(msg);
+        } catch {
+            const fallback = raw || `HTTP ${resp.status} ${resp.statusText}`;
+            throw new Error(fallback);
+        }
+    }
+    // Successful HTTP status but body might still be HTML/login page or malformed
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')) {
+        throw new Error('PoE returned HTML (likely a login or error page). Ensure the profile is public or set a valid POESESSID in Advanced.');
+    }
+    try {
+        const json = JSON.parse(trimmed);
+        const characters = Array.isArray(json?.characters) ? json.characters : (Array.isArray(json) ? json : []);
+        if (!Array.isArray(characters) || characters.length === 0) {
+            throw new Error('No characters found. Ensure the profile is public and the handle is correct.');
+        }
+        return characters as PoeCharacter[];
+    } catch (e) {
+        // Provide actionable diagnostics snippet
+        const sample = trimmed.slice(0, 200);
+        throw new Error(`Unexpected response from /api/poe. Tip: make your profile public or set POESESSID. Body starts with: ${sample}`);
+    }
 };
 
 // Securely set the POESESSID in an HTTP-only cookie on the server
