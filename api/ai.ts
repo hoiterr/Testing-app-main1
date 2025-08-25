@@ -44,8 +44,17 @@ function isPoeApiBuildData(obj: unknown): obj is PoeApiBuildData {
   return 'character' in buildData && buildData.character !== null;
 }
 
-import { Redis } from '@upstash/redis';
-import { Ratelimit } from '@upstash/ratelimit';
+// Lazy require Upstash libs to avoid type errors if types are missing at build time
+let Redis: any;
+let Ratelimit: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  ({ Redis } = require('@upstash/redis'));
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  ({ Ratelimit } = require('@upstash/ratelimit'));
+} catch {
+  // Not available locally; runtime guards below handle absence.
+}
 
 // Rate limiting configuration
 const RATE_LIMIT = {
@@ -240,12 +249,12 @@ export default async function handler(request: any, response: any) {
       return response.status(200).json({ status: 'ok', method: 'GET', path: request.url || '/api/ai' });
     }
 
-    // Only allow POST requests
+    // Only allow POST requests (and temporary GET for diagnostics)
     if (request.method !== 'POST') {
-      response.setHeader('Allow', 'POST, OPTIONS');
+      response.setHeader('Allow', 'GET, POST, OPTIONS');
       return response.status(405).json({ 
         error: 'Method not allowed',
-        allowedMethods: ['POST']
+        allowedMethods: ['GET', 'POST', 'OPTIONS']
       });
     }
     
@@ -295,12 +304,29 @@ export default async function handler(request: any, response: any) {
     }
 
     // Parse and validate request body
-    if (!request.body) {
-      throw new ApiError('Request body is required', 400);
+    let body: any = request.body;
+    if (!body) {
+      // Fallback: read body from stream
+      const chunks: any[] = [];
+      await new Promise<void>((resolve, reject) => {
+        request.on('data', (chunk: any) => chunks.push(chunk));
+        request.on('end', () => resolve());
+        request.on('error', (err: Error) => reject(err));
+      });
+      const raw = (global as any).Buffer ? (global as any).Buffer.concat(chunks).toString('utf8') : String(chunks.join(''));
+      if (!raw) throw new ApiError('Request body is required', 400);
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        throw new ApiError('Invalid JSON body', 400);
+      }
+    } else if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        throw new ApiError('Invalid JSON body', 400);
+      }
     }
-
-    // Parse the request body if it's a string (Next.js sometimes parses it, sometimes not)
-    const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
 
     // Validate the request against our schema
     const result = apiRequestSchema.safeParse(body);
